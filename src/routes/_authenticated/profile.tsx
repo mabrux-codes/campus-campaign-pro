@@ -64,7 +64,8 @@ function ProfilePage() {
     const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
     if (upErr) return toast.error(upErr.message);
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    await supabase.from("profiles").update({ [field]: data.publicUrl }).eq("id", user.id);
+    const update = field === "avatar_url" ? { avatar_url: data.publicUrl } : { company_logo_url: data.publicUrl };
+    await supabase.from("profiles").update(update).eq("id", user.id);
     qc.invalidateQueries({ queryKey: ["profile", user.id] });
     toast.success("Image updated");
   };
