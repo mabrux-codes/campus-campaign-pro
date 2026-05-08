@@ -14,16 +14,248 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaigns: {
+        Row: {
+          client_country: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string
+          deliverables: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          objectives: string | null
+          owner_id: string
+          paid_budget: number | null
+          platforms: string[]
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          type: Database["public"]["Enums"]["campaign_type"]
+          university_name: string
+          updated_at: string
+          uses_influencers: boolean
+        }
+        Insert: {
+          client_country?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          deliverables?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          objectives?: string | null
+          owner_id: string
+          paid_budget?: number | null
+          platforms?: string[]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          type?: Database["public"]["Enums"]["campaign_type"]
+          university_name: string
+          updated_at?: string
+          uses_influencers?: boolean
+        }
+        Update: {
+          client_country?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          deliverables?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          objectives?: string | null
+          owner_id?: string
+          paid_budget?: number | null
+          platforms?: string[]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          type?: Database["public"]["Enums"]["campaign_type"]
+          university_name?: string
+          updated_at?: string
+          uses_influencers?: boolean
+        }
+        Relationships: []
+      }
+      influencers: {
+        Row: {
+          campaign_id: string
+          cost: number | null
+          created_at: string
+          deliverable_type: string | null
+          engagement_rate: number | null
+          followers: number | null
+          handle: string | null
+          id: string
+          name: string
+          platform: string | null
+        }
+        Insert: {
+          campaign_id: string
+          cost?: number | null
+          created_at?: string
+          deliverable_type?: string | null
+          engagement_rate?: number | null
+          followers?: number | null
+          handle?: string | null
+          id?: string
+          name: string
+          platform?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          cost?: number | null
+          created_at?: string
+          deliverable_type?: string | null
+          engagement_rate?: number | null
+          followers?: number | null
+          handle?: string | null
+          id?: string
+          name?: string
+          platform?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company_logo_url: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          social_links: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          social_links?: Json
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          social_links?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          type: Database["public"]["Enums"]["report_type"]
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id: string
+          type: Database["public"]["Enums"]["report_type"]
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id?: string
+          type?: Database["public"]["Enums"]["report_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      owns_campaign: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      campaign_status: "draft" | "active" | "completed" | "paused"
+      campaign_type: "paid" | "organic"
+      report_type: "paid" | "influencer" | "organic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +382,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      campaign_status: ["draft", "active", "completed", "paused"],
+      campaign_type: ["paid", "organic"],
+      report_type: ["paid", "influencer", "organic"],
+    },
   },
 } as const
