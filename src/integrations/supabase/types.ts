@@ -36,6 +36,7 @@ export type Database = {
           university_name: string
           updated_at: string
           uses_influencers: boolean
+          workspace_id: string | null
         }
         Insert: {
           client_country?: string | null
@@ -58,6 +59,7 @@ export type Database = {
           university_name: string
           updated_at?: string
           uses_influencers?: boolean
+          workspace_id?: string | null
         }
         Update: {
           client_country?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           university_name?: string
           updated_at?: string
           uses_influencers?: boolean
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -130,6 +133,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -178,8 +214,47 @@ export type Database = {
         }
         Relationships: []
       }
+      report_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          report_id: string
+          uploader_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          report_id: string
+          uploader_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          report_id?: string
+          uploader_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_attachments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
+          ai_summary: string | null
           campaign_id: string
           created_at: string
           data: Json
@@ -188,6 +263,7 @@ export type Database = {
           type: Database["public"]["Enums"]["report_type"]
         }
         Insert: {
+          ai_summary?: string | null
           campaign_id: string
           created_at?: string
           data?: Json
@@ -196,6 +272,7 @@ export type Database = {
           type: Database["public"]["Enums"]["report_type"]
         }
         Update: {
+          ai_summary?: string | null
           campaign_id?: string
           created_at?: string
           data?: Json
@@ -234,11 +311,119 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          token?: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_admin_workspace: {
+        Args: { _user: string; _ws: string }
+        Returns: boolean
+      }
+      can_edit_workspace: {
+        Args: { _user: string; _ws: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -246,9 +431,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_workspace_member: {
+        Args: { _user: string; _ws: string }
+        Returns: boolean
+      }
       owns_campaign: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
+      }
+      workspace_role_of: {
+        Args: { _user: string; _ws: string }
+        Returns: Database["public"]["Enums"]["workspace_role"]
       }
     }
     Enums: {
@@ -256,6 +449,7 @@ export type Database = {
       campaign_status: "draft" | "active" | "completed" | "paused"
       campaign_type: "paid" | "organic"
       report_type: "paid" | "influencer" | "organic"
+      workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -387,6 +581,7 @@ export const Constants = {
       campaign_status: ["draft", "active", "completed", "paused"],
       campaign_type: ["paid", "organic"],
       report_type: ["paid", "influencer", "organic"],
+      workspace_role: ["owner", "admin", "editor", "viewer"],
     },
   },
 } as const
