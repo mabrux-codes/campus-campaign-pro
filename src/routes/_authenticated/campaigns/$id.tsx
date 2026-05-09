@@ -67,7 +67,7 @@ function CampaignDetail() {
   });
 
   const updateStatus = async (status: string) => {
-    const { error } = await supabase.from("campaigns").update({ status }).eq("id", id);
+    const { error } = await supabase.from("campaigns").update({ status: status as any }).eq("id", id);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["campaign", id] });
     toast.success("Status updated");
