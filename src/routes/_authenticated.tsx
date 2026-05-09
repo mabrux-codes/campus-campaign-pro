@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import { useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 
@@ -33,7 +34,8 @@ function AuthedLayout() {
         <div className="flex flex-1 flex-col">
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur">
             <SidebarTrigger />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <NotificationBell />
               <ThemeToggle />
             </div>
           </header>
