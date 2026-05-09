@@ -16,6 +16,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useWorkspace } from "@/lib/workspace";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight } from "lucide-react";
 
@@ -38,6 +39,7 @@ type Influencer = {
 function NewCampaign() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { current } = useWorkspace();
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
 
@@ -84,6 +86,7 @@ function NewCampaign() {
       .from("campaigns")
       .insert({
         owner_id: user.id,
+        workspace_id: current?.id ?? null,
         university_name: form.university_name,
         client_country: form.client_country || null,
         contact_person: form.contact_person || null,

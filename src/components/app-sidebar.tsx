@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Megaphone, FileBarChart, User, LineChart, LogOut } from "lucide-react";
+import { LayoutDashboard, Megaphone, FileBarChart, User, LineChart, LogOut, Users, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,13 +14,16 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { BrandLockup, BrandMark } from "@/components/brand";
+import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useAuth } from "@/lib/auth";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
+  { title: "Influencers", url: "/influencers", icon: Sparkles },
   { title: "Reports", url: "/reports", icon: FileBarChart },
   { title: "Analytics", url: "/analytics", icon: LineChart },
+  { title: "Team", url: "/team", icon: Users },
   { title: "Profile", url: "/profile", icon: User },
 ];
 
@@ -32,8 +35,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-4">
+      <SidebarHeader className="space-y-3 px-3 py-4">
         {collapsed ? <BrandMark size={28} /> : <BrandLockup />}
+        {!collapsed && <WorkspaceSwitcher />}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
