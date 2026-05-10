@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
+import { useWorkspace } from "@/lib/workspace";
 import { format } from "date-fns";
 import {
   Select,
