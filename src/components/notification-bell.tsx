@@ -74,6 +74,10 @@ export function NotificationBell() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/notifications" className="text-xs text-muted-foreground">View all notifications →</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {items.length === 0 ? (
           <p className="px-3 py-6 text-center text-xs text-muted-foreground">You're all caught up.</p>
         ) : (
