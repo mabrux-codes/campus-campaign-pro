@@ -33,14 +33,17 @@ type Campaign = {
 
 function Dashboard() {
   const { user } = useAuth();
+  const { current } = useWorkspace();
 
   const { data: campaigns = [] } = useQuery({
-    queryKey: ["campaigns", user?.id],
+    queryKey: ["campaigns", user?.id, current?.id ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("campaigns")
-        .select("id,name,status,type,uses_influencers,end_date,university_name,created_at")
+        .select("id,name,status,type,uses_influencers,end_date,university_name,created_at,workspace_id")
         .order("created_at", { ascending: false });
+      if (current?.id) query = query.eq("workspace_id", current.id);
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Campaign[];
     },

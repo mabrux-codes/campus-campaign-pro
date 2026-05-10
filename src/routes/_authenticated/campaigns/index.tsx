@@ -23,14 +23,17 @@ export const Route = createFileRoute("/_authenticated/campaigns/")({
 function CampaignList() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const { current } = useWorkspace();
 
   const { data = [], isLoading } = useQuery({
-    queryKey: ["campaigns-list"],
+    queryKey: ["campaigns-list", current?.id ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("campaigns")
-        .select("id,name,status,type,university_name,client_country,start_date,end_date,paid_budget")
+        .select("id,name,status,type,university_name,client_country,start_date,end_date,paid_budget,workspace_id")
         .order("created_at", { ascending: false });
+      if (current?.id) query = query.eq("workspace_id", current.id);
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
