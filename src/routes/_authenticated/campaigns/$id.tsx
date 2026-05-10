@@ -187,29 +187,13 @@ function CampaignDetail() {
         </Card>
       </div>
 
-      {influencers.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Influencers ({influencers.length})</CardTitle></CardHeader>
-          <CardContent>
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-muted-foreground">
-                <tr><th className="py-2">Name</th><th>Platform</th><th>Followers</th><th>Cost</th><th>Engagement</th></tr>
-              </thead>
-              <tbody>
-                {influencers.map((i: any) => (
-                  <tr key={i.id} className="border-t border-border">
-                    <td className="py-2">{i.name} <span className="text-xs text-muted-foreground">{i.handle}</span></td>
-                    <td>{i.platform || "—"}</td>
-                    <td>{i.followers?.toLocaleString() ?? "—"}</td>
-                    <td>{i.cost ? `$${Number(i.cost).toLocaleString()}` : "—"}</td>
-                    <td>{i.engagement_rate ? `${i.engagement_rate}%` : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
+      <CampaignEditor campaign={campaign} onSaved={() => qc.invalidateQueries({ queryKey: ["campaign", id] })} />
+
+      <InfluencersEditor
+        campaignId={id}
+        influencers={influencers as any[]}
+        onChanged={() => qc.invalidateQueries({ queryKey: ["influencers", id] })}
+      />
 
       <Card>
         <CardHeader><CardTitle className="text-sm font-medium">Reports ({reports.length})</CardTitle></CardHeader>
