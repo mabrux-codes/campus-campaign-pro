@@ -68,9 +68,19 @@ function CampaignDetail() {
 
   const updateStatus = async (status: string) => {
     const { error } = await supabase.from("campaigns").update({ status: status as any }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = error.message ?? "";
+      if (msg.includes("without start and end dates")) {
+        toast.error("Add a start and end date before activating or completing this campaign.");
+      } else if (msg.includes("before its end date")) {
+        toast.error("This campaign can only be marked Completed on or after its end date.");
+      } else {
+        toast.error(msg || "Failed to update status");
+      }
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["campaign", id] });
-    toast.success("Status updated");
+    toast.success(`Status updated to ${status}`);
   };
 
   const doExportPdf = async () => {
