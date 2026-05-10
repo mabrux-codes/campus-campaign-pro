@@ -27,7 +27,6 @@ import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports/new'
 import { Route as AuthenticatedCampaignsNewRouteImport } from './routes/_authenticated/campaigns/new'
 import { Route as AuthenticatedCampaignsIdRouteImport } from './routes/_authenticated/campaigns/$id'
-import { Route as ApiPublicHooksCheckDueReportsRouteImport } from './routes/api/public/hooks/check-due-reports'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -124,12 +123,6 @@ const AuthenticatedCampaignsIdRoute =
     path: '/campaigns/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const ApiPublicHooksCheckDueReportsRoute =
-  ApiPublicHooksCheckDueReportsRouteImport.update({
-    id: '/api/public/hooks/check-due-reports',
-    path: '/api/public/hooks/check-due-reports',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -149,7 +142,6 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
-  '/api/public/hooks/check-due-reports': typeof ApiPublicHooksCheckDueReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -169,7 +161,6 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
-  '/api/public/hooks/check-due-reports': typeof ApiPublicHooksCheckDueReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -191,7 +182,6 @@ export interface FileRoutesById {
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
-  '/api/public/hooks/check-due-reports': typeof ApiPublicHooksCheckDueReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -213,7 +203,6 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/campaigns/'
     | '/reports/'
-    | '/api/public/hooks/check-due-reports'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -233,7 +222,6 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/campaigns'
     | '/reports'
-    | '/api/public/hooks/check-due-reports'
   id:
     | '__root__'
     | '/'
@@ -254,7 +242,6 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/new'
     | '/_authenticated/campaigns/'
     | '/_authenticated/reports/'
-    | '/api/public/hooks/check-due-reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -265,7 +252,6 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
-  ApiPublicHooksCheckDueReportsRoute: typeof ApiPublicHooksCheckDueReportsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -396,13 +382,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/public/hooks/check-due-reports': {
-      id: '/api/public/hooks/check-due-reports'
-      path: '/api/public/hooks/check-due-reports'
-      fullPath: '/api/public/hooks/check-due-reports'
-      preLoaderRoute: typeof ApiPublicHooksCheckDueReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -446,8 +425,17 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   InviteTokenRoute: InviteTokenRoute,
-  ApiPublicHooksCheckDueReportsRoute: ApiPublicHooksCheckDueReportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
