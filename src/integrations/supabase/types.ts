@@ -435,6 +435,7 @@ export type Database = {
         Args: { _user: string; _ws: string }
         Returns: boolean
       }
+      notify_due_campaign_reports: { Args: never; Returns: number }
       owns_campaign: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
