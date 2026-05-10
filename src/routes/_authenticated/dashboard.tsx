@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useWorkspace } from "@/lib/workspace";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Megaphone, Activity, CheckCircle2, DollarSign, Sprout, Users, FileBarChart, Plus } from "lucide-react";
@@ -33,14 +34,17 @@ type Campaign = {
 
 function Dashboard() {
   const { user } = useAuth();
+  const { current } = useWorkspace();
 
   const { data: campaigns = [] } = useQuery({
-    queryKey: ["campaigns", user?.id],
+    queryKey: ["campaigns", user?.id, current?.id ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("campaigns")
-        .select("id,name,status,type,uses_influencers,end_date,university_name,created_at")
+        .select("id,name,status,type,uses_influencers,end_date,university_name,created_at,workspace_id")
         .order("created_at", { ascending: false });
+      if (current?.id) query = query.eq("workspace_id", current.id);
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Campaign[];
     },

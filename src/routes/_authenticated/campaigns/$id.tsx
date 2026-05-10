@@ -5,7 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { ArrowLeft, FileBarChart, FileText, FileSpreadsheet, Sparkles, Loader2, Upload, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, FileBarChart, FileText, FileSpreadsheet, Sparkles, Loader2, Upload, Image as ImageIcon, Pencil, Plus, Trash2, Save, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { exportCampaignPdf, exportCampaignExcel } from "@/lib/exports";
@@ -68,9 +72,19 @@ function CampaignDetail() {
 
   const updateStatus = async (status: string) => {
     const { error } = await supabase.from("campaigns").update({ status: status as any }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = error.message ?? "";
+      if (msg.includes("without start and end dates")) {
+        toast.error("Add a start and end date before activating or completing this campaign.");
+      } else if (msg.includes("before its end date")) {
+        toast.error("This campaign can only be marked Completed on or after its end date.");
+      } else {
+        toast.error(msg || "Failed to update status");
+      }
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["campaign", id] });
-    toast.success("Status updated");
+    toast.success(`Status updated to ${status}`);
   };
 
   const doExportPdf = async () => {
@@ -177,29 +191,13 @@ function CampaignDetail() {
         </Card>
       </div>
 
-      {influencers.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Influencers ({influencers.length})</CardTitle></CardHeader>
-          <CardContent>
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-muted-foreground">
-                <tr><th className="py-2">Name</th><th>Platform</th><th>Followers</th><th>Cost</th><th>Engagement</th></tr>
-              </thead>
-              <tbody>
-                {influencers.map((i: any) => (
-                  <tr key={i.id} className="border-t border-border">
-                    <td className="py-2">{i.name} <span className="text-xs text-muted-foreground">{i.handle}</span></td>
-                    <td>{i.platform || "—"}</td>
-                    <td>{i.followers?.toLocaleString() ?? "—"}</td>
-                    <td>{i.cost ? `$${Number(i.cost).toLocaleString()}` : "—"}</td>
-                    <td>{i.engagement_rate ? `${i.engagement_rate}%` : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
+      <CampaignEditor campaign={campaign} onSaved={() => qc.invalidateQueries({ queryKey: ["campaign", id] })} />
+
+      <InfluencersEditor
+        campaignId={id}
+        influencers={influencers as any[]}
+        onChanged={() => qc.invalidateQueries({ queryKey: ["influencers", id] })}
+      />
 
       <Card>
         <CardHeader><CardTitle className="text-sm font-medium">Reports ({reports.length})</CardTitle></CardHeader>
@@ -333,5 +331,222 @@ function Row({ k, v }: { k: string; v: string | null | undefined }) {
       <span className="text-muted-foreground">{k}</span>
       <span className="text-right">{v || "—"}</span>
     </div>
+  );
+}
+
+const PLATFORMS = ["Meta Ads", "TikTok Ads", "Google Ads", "LinkedIn Ads", "X/Twitter Ads"];
+
+function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    description: campaign.description ?? "",
+    objectives: campaign.objectives ?? "",
+    deliverables: campaign.deliverables ?? "",
+    start_date: campaign.start_date ?? "",
+    end_date: campaign.end_date ?? "",
+    type: campaign.type as "paid" | "organic",
+    paid_budget: campaign.paid_budget?.toString() ?? "",
+    platforms: (campaign.platforms ?? []) as string[],
+    uses_influencers: !!campaign.uses_influencers,
+  });
+
+  const togglePlatform = (p: string) =>
+    setForm((f) => ({ ...f, platforms: f.platforms.includes(p) ? f.platforms.filter((x) => x !== p) : [...f.platforms, p] }));
+
+  const save = async () => {
+    setBusy(true);
+    const { error } = await supabase.from("campaigns").update({
+      description: form.description || null,
+      objectives: form.objectives || null,
+      deliverables: form.deliverables || null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      type: form.type,
+      paid_budget: form.type === "paid" && form.paid_budget ? Number(form.paid_budget) : null,
+      platforms: form.type === "paid" ? form.platforms : [],
+      uses_influencers: form.type === "paid" && form.uses_influencers,
+    }).eq("id", campaign.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Campaign updated");
+    setEditing(false);
+    onSaved();
+  };
+
+  if (!editing) {
+    return (
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm font-medium capitalize">{campaign.type} campaign details</CardTitle>
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+            <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+          </Button>
+        </CardHeader>
+        <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+          <Row k="Type" v={campaign.type} />
+          <Row k="Window" v={campaign.start_date && campaign.end_date ? `${campaign.start_date} → ${campaign.end_date}` : "—"} />
+          {campaign.type === "paid" && (
+            <>
+              <Row k="Budget" v={campaign.paid_budget ? `$${Number(campaign.paid_budget).toLocaleString()}` : "—"} />
+              <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
+              <Row k="Uses influencers" v={campaign.uses_influencers ? "Yes" : "No"} />
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-sm font-medium">Edit campaign</CardTitle>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={busy}>
+            <X className="mr-2 h-3.5 w-3.5" /> Cancel
+          </Button>
+          <Button size="sm" onClick={save} disabled={busy}>
+            {busy ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />} Save
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Start date</Label>
+            <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">End date</Label>
+            <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Type</Label>
+            <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value as any })}>
+              <option value="organic">Organic</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Description</Label>
+          <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Objectives</Label>
+            <Textarea rows={3} value={form.objectives} onChange={(e) => setForm({ ...form, objectives: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Deliverables</Label>
+            <Textarea rows={3} value={form.deliverables} onChange={(e) => setForm({ ...form, deliverables: e.target.value })} />
+          </div>
+        </div>
+        {form.type === "paid" && (
+          <div className="space-y-3 rounded-md border border-border p-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Total ads budget ($)</Label>
+              <Input type="number" value={form.paid_budget} onChange={(e) => setForm({ ...form, paid_budget: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Platforms</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PLATFORMS.map((p) => (
+                  <label key={p} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                    <Checkbox checked={form.platforms.includes(p)} onCheckedChange={() => togglePlatform(p)} />
+                    {p}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={form.uses_influencers} onCheckedChange={(v) => setForm({ ...form, uses_influencers: !!v })} />
+              Uses influencers
+            </label>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function InfluencersEditor({ campaignId, influencers, onChanged }: { campaignId: string; influencers: any[]; onChanged: () => void }) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ name: "", handle: "", platform: "", followers: "", cost: "", engagement_rate: "" });
+
+  const add = async () => {
+    if (!draft.name.trim()) return toast.error("Name is required");
+    const { error } = await supabase.from("influencers").insert({
+      campaign_id: campaignId,
+      name: draft.name,
+      handle: draft.handle || null,
+      platform: draft.platform || null,
+      followers: draft.followers ? Number(draft.followers) : null,
+      cost: draft.cost ? Number(draft.cost) : null,
+      engagement_rate: draft.engagement_rate ? Number(draft.engagement_rate) : null,
+    });
+    if (error) return toast.error(error.message);
+    setDraft({ name: "", handle: "", platform: "", followers: "", cost: "", engagement_rate: "" });
+    setAdding(false);
+    onChanged();
+    toast.success("Influencer added");
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("influencers").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    onChanged();
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-sm font-medium">Influencers ({influencers.length})</CardTitle>
+        <Button size="sm" variant="outline" onClick={() => setAdding((v) => !v)}>
+          <Plus className="mr-2 h-3.5 w-3.5" /> Add
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {adding && (
+          <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-3">
+            <Input placeholder="Name *" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+            <Input placeholder="Handle" value={draft.handle} onChange={(e) => setDraft({ ...draft, handle: e.target.value })} />
+            <Input placeholder="Platform" value={draft.platform} onChange={(e) => setDraft({ ...draft, platform: e.target.value })} />
+            <Input placeholder="Followers" type="number" value={draft.followers} onChange={(e) => setDraft({ ...draft, followers: e.target.value })} />
+            <Input placeholder="Cost" type="number" value={draft.cost} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
+            <Input placeholder="Engagement %" type="number" value={draft.engagement_rate} onChange={(e) => setDraft({ ...draft, engagement_rate: e.target.value })} />
+            <div className="sm:col-span-3 flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button size="sm" onClick={add}>Save</Button>
+            </div>
+          </div>
+        )}
+        {influencers.length === 0 && !adding ? (
+          <p className="text-sm text-muted-foreground">No influencers yet.</p>
+        ) : influencers.length > 0 && (
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase text-muted-foreground">
+              <tr><th className="py-2">Name</th><th>Platform</th><th>Followers</th><th>Cost</th><th>Engagement</th><th></th></tr>
+            </thead>
+            <tbody>
+              {influencers.map((i) => (
+                <tr key={i.id} className="border-t border-border">
+                  <td className="py-2">{i.name} <span className="text-xs text-muted-foreground">{i.handle}</span></td>
+                  <td>{i.platform || "—"}</td>
+                  <td>{i.followers?.toLocaleString() ?? "—"}</td>
+                  <td>{i.cost ? `$${Number(i.cost).toLocaleString()}` : "—"}</td>
+                  <td>{i.engagement_rate ? `${i.engagement_rate}%` : "—"}</td>
+                  <td className="text-right">
+                    <Button size="icon" variant="ghost" onClick={() => remove(i.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
