@@ -447,7 +447,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      campaign_status: "draft" | "active" | "completed" | "paused"
+      campaign_status: "draft" | "active" | "completed" | "paused" | "cancelled"
       campaign_type: "paid" | "organic"
       report_type: "paid" | "influencer" | "organic"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
@@ -579,7 +579,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      campaign_status: ["draft", "active", "completed", "paused"],
+      campaign_status: ["draft", "active", "completed", "paused", "cancelled"],
       campaign_type: ["paid", "organic"],
       report_type: ["paid", "influencer", "organic"],
       workspace_role: ["owner", "admin", "editor", "viewer"],
