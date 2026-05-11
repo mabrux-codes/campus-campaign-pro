@@ -20,12 +20,11 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
 
   const create = async () => {
     if (!user || !name.trim()) return;
-    const { data, error } = await supabase.from("workspaces").insert({ name: name.trim(), owner_id: user.id }).select("id").single();
+    const { data, error } = await supabase.rpc("create_workspace", { p_name: name.trim() });
     if (error || !data) return toast.error(error?.message ?? "Failed");
-    await supabase.from("workspace_members").insert({ workspace_id: data.id, user_id: user.id, role: "owner" });
     setName("");
     await refresh();
-    setCurrent(data.id);
+    setCurrent(data as string);
     toast.success("Workspace created");
   };
 

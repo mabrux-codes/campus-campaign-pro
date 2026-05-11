@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedInfluencersRouteImport } from './routes/_authenticated/influencers'
@@ -65,6 +66,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
 const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/influencers': typeof AuthenticatedInfluencersRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
   '/campaigns/$id': typeof AuthenticatedCampaignsIdRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/influencers': typeof AuthenticatedInfluencersRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
   '/campaigns/$id': typeof AuthenticatedCampaignsIdRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/_authenticated/influencers': typeof AuthenticatedInfluencersRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/campaigns/$id': typeof AuthenticatedCampaignsIdRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/influencers'
     | '/notifications'
     | '/profile'
+    | '/settings'
     | '/team'
     | '/invite/$token'
     | '/campaigns/$id'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/influencers'
     | '/notifications'
     | '/profile'
+    | '/settings'
     | '/team'
     | '/invite/$token'
     | '/campaigns/$id'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/_authenticated/influencers'
     | '/_authenticated/notifications'
     | '/_authenticated/profile'
+    | '/_authenticated/settings'
     | '/_authenticated/team'
     | '/invite/$token'
     | '/_authenticated/campaigns/$id'
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profile': {
@@ -391,6 +410,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInfluencersRoute: typeof AuthenticatedInfluencersRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedCampaignsIdRoute: typeof AuthenticatedCampaignsIdRoute
   AuthenticatedCampaignsNewRoute: typeof AuthenticatedCampaignsNewRoute
@@ -405,6 +425,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInfluencersRoute: AuthenticatedInfluencersRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedCampaignsIdRoute: AuthenticatedCampaignsIdRoute,
   AuthenticatedCampaignsNewRoute: AuthenticatedCampaignsNewRoute,

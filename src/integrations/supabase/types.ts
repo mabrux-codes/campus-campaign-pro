@@ -135,6 +135,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          archived_at: string | null
           body: string | null
           created_at: string
           id: string
@@ -145,6 +146,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -155,6 +157,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -174,6 +177,7 @@ export type Database = {
           company_name: string | null
           country: string | null
           created_at: string
+          currency: string
           email: string | null
           full_name: string | null
           id: string
@@ -189,6 +193,7 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          currency?: string
           email?: string | null
           full_name?: string | null
           id: string
@@ -204,6 +209,7 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          currency?: string
           email?: string | null
           full_name?: string | null
           id?: string
@@ -424,6 +430,15 @@ export type Database = {
         Args: { _user: string; _ws: string }
         Returns: boolean
       }
+      create_workspace: { Args: { p_name: string }; Returns: string }
+      derive_campaign_status: {
+        Args: {
+          _current: Database["public"]["Enums"]["campaign_status"]
+          _end: string
+          _start: string
+        }
+        Returns: Database["public"]["Enums"]["campaign_status"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -440,6 +455,7 @@ export type Database = {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
       }
+      refresh_campaign_statuses: { Args: never; Returns: number }
       workspace_role_of: {
         Args: { _user: string; _ws: string }
         Returns: Database["public"]["Enums"]["workspace_role"]
@@ -447,7 +463,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      campaign_status: "draft" | "active" | "completed" | "paused"
+      campaign_status: "draft" | "active" | "completed" | "paused" | "cancelled"
       campaign_type: "paid" | "organic"
       report_type: "paid" | "influencer" | "organic"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
@@ -579,7 +595,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      campaign_status: ["draft", "active", "completed", "paused"],
+      campaign_status: ["draft", "active", "completed", "paused", "cancelled"],
       campaign_type: ["paid", "organic"],
       report_type: ["paid", "influencer", "organic"],
       workspace_role: ["owner", "admin", "editor", "viewer"],
