@@ -339,6 +339,7 @@ function Row({ k, v }: { k: string; v: string | null | undefined }) {
 const PLATFORMS = ["Meta Ads", "TikTok Ads", "Google Ads", "LinkedIn Ads", "X/Twitter Ads"];
 
 function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => void }) {
+  const { currency } = useCurrency();
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
@@ -390,7 +391,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => v
           <Row k="Window" v={campaign.start_date && campaign.end_date ? `${campaign.start_date} → ${campaign.end_date}` : "—"} />
           {campaign.type === "paid" && (
             <>
-              <Row k="Budget" v={campaign.paid_budget ? formatMoney(Number(campaign.paid_budget)) : "—"} />
+              <Row k="Budget" v={campaign.paid_budget ? formatMoney(Number(campaign.paid_budget), currency) : "—"} />
               <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               <Row k="Uses influencers" v={campaign.uses_influencers ? "Yes" : "No"} />
             </>
