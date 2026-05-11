@@ -5,6 +5,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { WorkspaceProvider } from "@/lib/workspace";
+import { CurrencyProvider } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 
