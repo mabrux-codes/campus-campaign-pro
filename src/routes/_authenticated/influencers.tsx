@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
+import { useCurrency, formatMoney } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/influencers")({
   component: InfluencersPage,
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/influencers")({
 
 function InfluencersPage() {
   const [q, setQ] = useState("");
+  const { currency } = useCurrency();
   const { data = [], isLoading } = useQuery({
     queryKey: ["influencers-all"],
     queryFn: async () => {
@@ -57,7 +59,7 @@ function InfluencersPage() {
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Influencers" value={totals.total.toString()} />
         <Stat label="Total followers" value={totals.followers.toLocaleString()} />
-        <Stat label="Total spend" value={`$${totals.cost.toLocaleString()}`} />
+        <Stat label="Total spend" value={formatMoney(totals.cost, currency)} />
         <Stat label="Avg engagement" value={`${totals.avgEng.toFixed(1)}%`} />
       </div>
 
@@ -92,7 +94,7 @@ function InfluencersPage() {
                   </td>
                   <td className="px-4 py-3">{i.platform ? <Badge variant="outline">{i.platform}</Badge> : "—"}</td>
                   <td className="px-4 py-3">{i.followers?.toLocaleString() ?? "—"}</td>
-                  <td className="px-4 py-3">{i.cost ? `$${Number(i.cost).toLocaleString()}` : "—"}</td>
+                  <td className="px-4 py-3">{i.cost ? formatMoney(Number(i.cost), currency) : "—"}</td>
                   <td className="px-4 py-3">{i.engagement_rate ? `${i.engagement_rate}%` : "—"}</td>
                   <td className="px-4 py-3">
                     {i.campaign ? (
