@@ -68,7 +68,7 @@ function SettingsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {(["light", "dark", "system"] as const).map((t) => (
+            {(["light", "dark"] as const).map((t) => (
               <Button key={t} variant={theme === t ? "default" : "outline"} size="sm" onClick={() => setTheme(t)} className="capitalize">
                 {t}
               </Button>
