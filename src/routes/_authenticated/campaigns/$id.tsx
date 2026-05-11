@@ -14,6 +14,7 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { exportCampaignPdf, exportCampaignExcel } from "@/lib/exports";
 import { useAuth } from "@/lib/auth";
+import { useCurrency, formatMoney } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/campaigns/$id")({
   component: CampaignDetail,
@@ -23,6 +24,7 @@ function CampaignDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { currency } = useCurrency();
 
   const { data: campaign } = useQuery({
     queryKey: ["campaign", id],
@@ -183,7 +185,7 @@ function CampaignDetail() {
             <Row k="Phone" v={campaign.contact_phone} />
             {campaign.type === "paid" && (
               <>
-                <Row k="Budget" v={campaign.paid_budget ? `$${Number(campaign.paid_budget).toLocaleString()}` : "—"} />
+                <Row k="Budget" v={campaign.paid_budget ? formatMoney(Number(campaign.paid_budget), currency) : "—"} />
                 <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               </>
             )}
@@ -388,7 +390,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => v
           <Row k="Window" v={campaign.start_date && campaign.end_date ? `${campaign.start_date} → ${campaign.end_date}` : "—"} />
           {campaign.type === "paid" && (
             <>
-              <Row k="Budget" v={campaign.paid_budget ? `$${Number(campaign.paid_budget).toLocaleString()}` : "—"} />
+              <Row k="Budget" v={campaign.paid_budget ? formatMoney(Number(campaign.paid_budget)) : "—"} />
               <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               <Row k="Uses influencers" v={campaign.uses_influencers ? "Yes" : "No"} />
             </>
