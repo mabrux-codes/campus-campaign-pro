@@ -16,6 +16,7 @@ import {
 import { BrandLockup, BrandMark } from "@/components/brand";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useAuth } from "@/lib/auth";
+import { useNotifications } from "@/lib/notifications";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -34,6 +35,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { signOut } = useAuth();
+  const { unreadCount } = useNotifications();
 
   return (
     <Sidebar collapsible="icon">
@@ -48,12 +50,18 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((it) => {
                 const active = path === it.url || path.startsWith(it.url + "/");
+                const showBadge = it.url === "/notifications" && unreadCount > 0;
                 return (
                   <SidebarMenuItem key={it.url}>
                     <SidebarMenuButton asChild isActive={active}>
                       <Link to={it.url} className="flex items-center gap-2">
                         <it.icon className="h-4 w-4" />
-                        {!collapsed && <span>{it.title}</span>}
+                        {!collapsed && <span className="flex-1">{it.title}</span>}
+                        {showBadge && (
+                          <span className={`inline-flex items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground ${collapsed ? "absolute right-1 top-1 h-4 min-w-4" : "h-5 min-w-5"}`}>
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

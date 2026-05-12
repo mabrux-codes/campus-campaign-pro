@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { exportCampaignPdf, exportCampaignExcel } from "@/lib/exports";
 import { useAuth } from "@/lib/auth";
 import { useCurrency, formatMoney } from "@/lib/currency";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export const Route = createFileRoute("/_authenticated/campaigns/$id")({
   component: CampaignDetail,
@@ -312,7 +314,25 @@ function ReportRow({ report, attachments, userId, onChanged }: { report: any; at
           <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
             <Sparkles className="h-3.5 w-3.5" /> AI insights
           </p>
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">{summary}</div>
+          <div className="ai-markdown text-sm text-foreground">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: (p) => <h3 className="mt-3 mb-1 text-base font-semibold" {...p} />,
+                h2: (p) => <h3 className="mt-3 mb-1 text-base font-semibold" {...p} />,
+                h3: (p) => <h4 className="mt-3 mb-1 text-sm font-semibold" {...p} />,
+                h4: (p) => <h5 className="mt-2 mb-1 text-sm font-semibold" {...p} />,
+                p: (p) => <p className="mb-2 leading-relaxed" {...p} />,
+                ul: (p) => <ul className="mb-2 ml-5 list-disc space-y-1" {...p} />,
+                ol: (p) => <ol className="mb-2 ml-5 list-decimal space-y-1" {...p} />,
+                li: (p) => <li className="leading-relaxed" {...p} />,
+                strong: (p) => <strong className="font-semibold text-foreground" {...p} />,
+                code: (p) => <code className="rounded bg-muted px-1 py-0.5 text-xs" {...p} />,
+              }}
+            >
+              {summary}
+            </ReactMarkdown>
+          </div>
         </div>
       )}
     </div>

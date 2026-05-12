@@ -13,6 +13,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { WorkspaceProvider } from "@/lib/workspace";
 import { CurrencyProvider } from "@/lib/currency";
+import { NotificationsProvider } from "@/lib/notifications";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -115,8 +116,10 @@ function RootComponent() {
         <AuthProvider>
           <WorkspaceProvider>
             <CurrencyProvider>
-              <Outlet />
-              <Toaster richColors position="top-right" />
+              <NotificationsProvider>
+                <Outlet />
+                <Toaster richColors position="top-right" />
+              </NotificationsProvider>
             </CurrencyProvider>
           </WorkspaceProvider>
         </AuthProvider>

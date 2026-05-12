@@ -86,6 +86,66 @@ export type Database = {
         }
         Relationships: []
       }
+      deliverables_catalog: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      influencer_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          followers: number | null
+          handle: string | null
+          id: string
+          name: string
+          notes: string | null
+          platform: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          followers?: number | null
+          handle?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          platform?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          followers?: number | null
+          handle?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          platform?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       influencers: {
         Row: {
           campaign_id: string
@@ -98,6 +158,7 @@ export type Database = {
           id: string
           name: string
           platform: string | null
+          profile_id: string | null
         }
         Insert: {
           campaign_id: string
@@ -110,6 +171,7 @@ export type Database = {
           id?: string
           name: string
           platform?: string | null
+          profile_id?: string | null
         }
         Update: {
           campaign_id?: string
@@ -122,6 +184,7 @@ export type Database = {
           id?: string
           name?: string
           platform?: string | null
+          profile_id?: string | null
         }
         Relationships: [
           {
