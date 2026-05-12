@@ -1,45 +1,44 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useWorkspace } from "@/lib/workspace";
+import { useCurrency, CURRENCIES, type Currency } from "@/lib/currency";
+import { CountryPicker } from "@/components/country-picker";
+import { DeliverablesPicker } from "@/components/deliverables-picker";
+import { SOCIAL_PLATFORMS, handlePlaceholder } from "@/lib/social-platforms";
+import { getRates, convert } from "@/lib/fx";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, RefreshCw, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/campaigns/new")({
   component: NewCampaign,
 });
 
-const PLATFORMS = ["Meta Ads", "TikTok Ads", "Google Ads", "LinkedIn Ads", "X/Twitter Ads"];
+const AD_PLATFORMS = ["Meta Ads", "TikTok Ads", "Google Ads", "LinkedIn Ads", "X/Twitter Ads"];
 
 type Influencer = {
+  profile_id?: string | null;
   name: string;
-  handle: string;
   platform: string;
+  handle: string;
   followers: string;
-  deliverable_type: string;
-  cost: string;
-  engagement_rate: string;
 };
 
 function NewCampaign() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { current } = useWorkspace();
+  const { currency, setCurrency, symbol } = useCurrency();
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
 
@@ -55,7 +54,6 @@ function NewCampaign() {
     deliverables: "",
     start_date: "",
     end_date: "",
-    status: "draft" as "draft" | "active" | "completed" | "paused",
     type: "organic" as "paid" | "organic",
     paid_budget: "",
     platforms: [] as string[],
@@ -64,15 +62,8 @@ function NewCampaign() {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
 
   const upd = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
-
   const togglePlatform = (p: string) =>
     upd("platforms", form.platforms.includes(p) ? form.platforms.filter((x) => x !== p) : [...form.platforms, p]);
-
-  const addInfluencer = () =>
-    setInfluencers((arr) => [
-      ...arr,
-      { name: "", handle: "", platform: "", followers: "", deliverable_type: "", cost: "", engagement_rate: "" },
-    ]);
 
   const submit = async () => {
     if (!user) return;
@@ -98,7 +89,6 @@ function NewCampaign() {
         deliverables: form.deliverables || null,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
-        status: form.status,
         type: form.type,
         paid_budget: form.type === "paid" && form.paid_budget ? Number(form.paid_budget) : null,
         platforms: form.type === "paid" ? form.platforms : [],
@@ -118,13 +108,11 @@ function NewCampaign() {
         .filter((i) => i.name)
         .map((i) => ({
           campaign_id: campaign.id,
+          profile_id: i.profile_id ?? null,
           name: i.name,
           handle: i.handle || null,
           platform: i.platform || null,
           followers: i.followers ? Number(i.followers) : null,
-          deliverable_type: i.deliverable_type || null,
-          cost: i.cost ? Number(i.cost) : null,
-          engagement_rate: i.engagement_rate ? Number(i.engagement_rate) : null,
         }));
       if (rows.length) await supabase.from("influencers").insert(rows);
     }
@@ -147,10 +135,7 @@ function NewCampaign() {
 
       <div className="flex gap-1">
         {Array.from({ length: totalSteps }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full ${i < step ? "bg-primary" : "bg-border"}`}
-          />
+          <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? "bg-primary" : "bg-border"}`} />
         ))}
       </div>
 
@@ -159,7 +144,10 @@ function NewCampaign() {
           <CardHeader><CardTitle className="text-base font-medium">Client</CardTitle></CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <Field label="University / Client name *" value={form.university_name} onChange={(v) => upd("university_name", v)} />
-            <Field label="Country" value={form.client_country} onChange={(v) => upd("client_country", v)} />
+            <div className="space-y-2">
+              <Label>Country</Label>
+              <CountryPicker value={form.client_country} onChange={(v) => upd("client_country", v)} />
+            </div>
             <Field label="Contact person" value={form.contact_person} onChange={(v) => upd("contact_person", v)} />
             <Field label="Contact email" type="email" value={form.contact_email} onChange={(v) => upd("contact_email", v)} />
             <Field label="Contact phone" value={form.contact_phone} onChange={(v) => upd("contact_phone", v)} />
@@ -182,24 +170,16 @@ function NewCampaign() {
             </div>
             <div className="space-y-2">
               <Label>Deliverables</Label>
-              <Textarea value={form.deliverables} onChange={(e) => upd("deliverables", e.target.value)} rows={3} />
+              <DeliverablesPicker value={form.deliverables} onChange={(v) => upd("deliverables", v)} />
+              <p className="text-xs text-muted-foreground">Pick from your library or add new ones — they're saved for next time.</p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Start date" type="date" value={form.start_date} onChange={(v) => upd("start_date", v)} />
               <Field label="End date" type="date" value={form.end_date} onChange={(v) => upd("end_date", v)} />
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => upd("status", v as typeof form.status)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
+            <p className="rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground">
+              Status updates automatically based on the campaign window — Draft before start, Active during, Completed after end.
+            </p>
             {form.start_date && form.end_date && (
               <p className="text-xs text-muted-foreground">
                 Duration: {Math.max(0, Math.ceil((+new Date(form.end_date) - +new Date(form.start_date)) / 86400000))} days
@@ -233,11 +213,17 @@ function NewCampaign() {
 
             {form.type === "paid" && (
               <div className="space-y-4 border-t border-border pt-4">
-                <Field label="Total ads budget" type="number" value={form.paid_budget} onChange={(v) => upd("paid_budget", v)} />
+                <BudgetSection
+                  amount={form.paid_budget}
+                  onAmount={(v) => upd("paid_budget", v)}
+                  currency={currency}
+                  setCurrency={setCurrency}
+                  symbol={symbol}
+                />
                 <div className="space-y-2">
                   <Label>Platforms</Label>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {PLATFORMS.map((p) => (
+                    {AD_PLATFORMS.map((p) => (
                       <label key={p} className="flex items-center gap-2 rounded-md border border-border p-2.5 text-sm">
                         <Checkbox checked={form.platforms.includes(p)} onCheckedChange={() => togglePlatform(p)} />
                         {p}
@@ -259,42 +245,11 @@ function NewCampaign() {
       )}
 
       {step === 4 && form.type === "paid" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-base font-medium">
-              Influencers
-              {form.uses_influencers && (
-                <Button size="sm" variant="outline" onClick={addInfluencer}>
-                  <Plus className="mr-2 h-4 w-4" /> Add
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!form.uses_influencers ? (
-              <p className="text-sm text-muted-foreground">No influencers selected for this campaign.</p>
-            ) : influencers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Add your first influencer to get started.</p>
-            ) : (
-              influencers.map((inf, idx) => (
-                <div key={idx} className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2">
-                  <Field label="Name" value={inf.name} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, name: v } : x)))} />
-                  <Field label="Handle" value={inf.handle} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, handle: v } : x)))} />
-                  <Field label="Platform" value={inf.platform} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, platform: v } : x)))} />
-                  <Field label="Followers" type="number" value={inf.followers} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, followers: v } : x)))} />
-                  <Field label="Deliverable" value={inf.deliverable_type} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, deliverable_type: v } : x)))} />
-                  <Field label="Cost" type="number" value={inf.cost} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, cost: v } : x)))} />
-                  <Field label="Engagement %" type="number" value={inf.engagement_rate} onChange={(v) => setInfluencers((a) => a.map((x, i) => (i === idx ? { ...x, engagement_rate: v } : x)))} />
-                  <div className="flex items-end">
-                    <Button variant="ghost" size="sm" onClick={() => setInfluencers((a) => a.filter((_, i) => i !== idx))}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Remove
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <InfluencerStep
+          uses={form.uses_influencers}
+          influencers={influencers}
+          setInfluencers={setInfluencers}
+        />
       )}
 
       <div className="flex items-center justify-between">
@@ -316,11 +271,230 @@ function NewCampaign() {
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function BudgetSection({ amount, onAmount, currency, setCurrency, symbol }: {
+  amount: string; onAmount: (v: string) => void;
+  currency: Currency; setCurrency: (c: Currency) => Promise<void>; symbol: string;
+}) {
+  const [rates, setRates] = useState<Record<string, number> | null>(null);
+  const [updated, setUpdated] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadRates = async (force = false) => {
+    setLoading(true);
+    if (force) try { localStorage.removeItem("fx_rates_v1"); } catch {}
+    const r = await getRates();
+    if (r) { setRates(r.rates); setUpdated(r.updated); }
+    setLoading(false);
+  };
+  useEffect(() => { loadRates(); }, []);
+
+  const num = Number(amount);
+  const kes = rates && !isNaN(num) && num > 0 ? convert(num, currency, "KES", rates) : null;
+
+  return (
+    <div className="space-y-2">
+      <Label>Total ads budget</Label>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{symbol.trim() || currency}</span>
+          <Input type="number" value={amount} onChange={(e) => onAmount(e.target.value)} className="pl-10" placeholder="0" />
+        </div>
+        <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {CURRENCIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
+        <div>
+          <span className="text-muted-foreground">≈ </span>
+          <span className="font-medium">
+            {kes !== null
+              ? `KSh ${kes.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+              : currency === "KES"
+                ? "—"
+                : "Loading rate…"}
+          </span>
+          {currency !== "KES" && <span className="ml-2 text-muted-foreground">(live FX)</span>}
+        </div>
+        <button type="button" onClick={() => loadRates(true)} className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          {updated ? `Updated ${new Date(updated).toLocaleTimeString()}` : "Refresh"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InfluencerStep({ uses, influencers, setInfluencers }: {
+  uses: boolean;
+  influencers: Influencer[];
+  setInfluencers: (v: Influencer[] | ((p: Influencer[]) => Influencer[])) => void;
+}) {
+  const { current } = useWorkspace();
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [draft, setDraft] = useState<Influencer>({ name: "", platform: "", handle: "", followers: "" });
+
+  const load = async () => {
+    if (!current?.id) return;
+    const { data } = await supabase
+      .from("influencer_profiles")
+      .select("id,name,platform,handle,followers,avatar_url")
+      .eq("workspace_id", current.id)
+      .order("name");
+    setProfiles(data ?? []);
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [current?.id]);
+
+  const filtered = profiles.filter((p) =>
+    !search ||
+    `${p.name} ${p.handle ?? ""} ${p.platform ?? ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const isPicked = (id: string) => influencers.some((i) => i.profile_id === id);
+  const pick = (p: any) => {
+    if (isPicked(p.id)) {
+      setInfluencers((arr) => arr.filter((i) => i.profile_id !== p.id));
+    } else {
+      setInfluencers((arr) => [...arr, {
+        profile_id: p.id, name: p.name, platform: p.platform ?? "", handle: p.handle ?? "", followers: p.followers?.toString() ?? "",
+      }]);
+    }
+  };
+
+  const saveNew = async () => {
+    if (!draft.name.trim() || !current?.id) return toast.error("Name is required");
+    if (!draft.platform) return toast.error("Pick a platform");
+    const { data, error } = await supabase
+      .from("influencer_profiles")
+      .insert({
+        workspace_id: current.id,
+        name: draft.name.trim(),
+        platform: draft.platform,
+        handle: draft.handle || null,
+        followers: draft.followers ? Number(draft.followers) : null,
+      })
+      .select("id,name,platform,handle,followers")
+      .single();
+    if (error || !data) return toast.error(error?.message ?? "Failed");
+    toast.success("Saved to your library");
+    setInfluencers((arr) => [...arr, {
+      profile_id: data.id, name: data.name, platform: data.platform ?? "", handle: data.handle ?? "", followers: data.followers?.toString() ?? "",
+    }]);
+    setDraft({ name: "", platform: "", handle: "", followers: "" });
+    setCreatingNew(false);
+    load();
+  };
+
+  if (!uses) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-base font-medium">Influencers</CardTitle></CardHeader>
+        <CardContent><p className="text-sm text-muted-foreground">No influencers selected for this campaign.</p></CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between text-base font-medium">
+          Influencers
+          <Button size="sm" variant="outline" onClick={() => setCreatingNew((v) => !v)}>
+            <Plus className="mr-2 h-4 w-4" /> New influencer
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {creatingNew && (
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Add to your library</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Name *" value={draft.name} onChange={(v) => setDraft({ ...draft, name: v })} />
+              <div className="space-y-2">
+                <Label>Platform *</Label>
+                <Select value={draft.platform} onValueChange={(v) => setDraft({ ...draft, platform: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                  <SelectContent>
+                    {SOCIAL_PLATFORMS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {draft.platform && (
+                <Field label="Handle / URL" value={draft.handle} onChange={(v) => setDraft({ ...draft, handle: v })} placeholder={handlePlaceholder(draft.platform)} />
+              )}
+              <Field label="Followers" type="number" value={draft.followers} onChange={(v) => setDraft({ ...draft, followers: v })} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setCreatingNew(false)}>Cancel</Button>
+              <Button size="sm" onClick={saveNew}>Save</Button>
+            </div>
+          </div>
+        )}
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search your influencer library" className="pl-9" />
+        </div>
+
+        {profiles.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No influencers in your library yet — add your first one above.</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {filtered.map((p) => {
+              const picked = isPicked(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => pick(p)}
+                  className={`flex items-start justify-between gap-2 rounded-lg border p-3 text-left transition ${
+                    picked ? "border-primary bg-accent/40" : "border-border hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{p.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{p.handle ?? "—"}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {p.platform && <Badge variant="outline" className="text-[10px]">{p.platform}</Badge>}
+                      {p.followers != null && <Badge variant="outline" className="text-[10px]">{p.followers.toLocaleString()} followers</Badge>}
+                    </div>
+                  </div>
+                  <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border ${picked ? "border-primary bg-primary" : "border-border"}`} />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {influencers.length > 0 && (
+          <div className="space-y-2 rounded-lg border border-border p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Selected for this campaign</p>
+            {influencers.map((inf, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-2 text-sm">
+                <span>
+                  {inf.name} <span className="text-xs text-muted-foreground">{inf.platform}{inf.handle ? ` · ${inf.handle}` : ""}</span>
+                </span>
+                <Button size="icon" variant="ghost" onClick={() => setInfluencers((a) => a.filter((_, i) => i !== idx))}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Field({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
