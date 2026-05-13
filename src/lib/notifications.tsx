@@ -24,6 +24,23 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) { setUnread(0); return; }
     refresh();
+    const playBeep = () => {
+      try {
+        const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(880, ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.18);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); o.stop(ctx.currentTime + 0.36);
+      } catch {/* ignore */}
+    };
     const ch = supabase
       .channel("notifs-global:" + user.id)
       .on(
@@ -32,6 +49,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         (payload) => {
           const n: any = payload.new;
           toast(n.title, { description: n.body ?? undefined });
+          playBeep();
           setUnread((c) => c + 1);
         },
       )
