@@ -148,11 +148,9 @@ function NotificationsPage() {
           <p className="text-sm text-muted-foreground">{unread} unread</p>
           <h1 className="font-display text-4xl">Notifications</h1>
         </div>
-        {unread > 0 && (
-          <Button variant="outline" size="sm" onClick={markAll}>
-            <CheckCheck className="mr-2 h-4 w-4" /> Mark all read
-          </Button>
-        )}
+        <Button variant="outline" size="sm" onClick={markAll} disabled={unread === 0}>
+          <CheckCheck className="mr-2 h-4 w-4" /> Mark all as read
+        </Button>
       </div>
 
       {/* Filters */}
