@@ -21,6 +21,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedInfluencersRouteImport } from './routes/_authenticated/influencers'
+import { Route as AuthenticatedDeliverablesRouteImport } from './routes/_authenticated/deliverables'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
@@ -90,6 +91,12 @@ const AuthenticatedInfluencersRoute =
     path: '/influencers',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDeliverablesRoute =
+  AuthenticatedDeliverablesRouteImport.update({
+    id: '/deliverables',
+    path: '/deliverables',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deliverables': typeof AuthenticatedDeliverablesRoute
   '/influencers': typeof AuthenticatedInfluencersRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deliverables': typeof AuthenticatedDeliverablesRoute
   '/influencers': typeof AuthenticatedInfluencersRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -180,6 +189,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/deliverables': typeof AuthenticatedDeliverablesRoute
   '/_authenticated/influencers': typeof AuthenticatedInfluencersRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/analytics'
     | '/dashboard'
+    | '/deliverables'
     | '/influencers'
     | '/notifications'
     | '/profile'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/analytics'
     | '/dashboard'
+    | '/deliverables'
     | '/influencers'
     | '/notifications'
     | '/profile'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/analytics'
     | '/_authenticated/dashboard'
+    | '/_authenticated/deliverables'
     | '/_authenticated/influencers'
     | '/_authenticated/notifications'
     | '/_authenticated/profile'
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInfluencersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/deliverables': {
+      id: '/_authenticated/deliverables'
+      path: '/deliverables'
+      fullPath: '/deliverables'
+      preLoaderRoute: typeof AuthenticatedDeliverablesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -407,6 +427,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDeliverablesRoute: typeof AuthenticatedDeliverablesRoute
   AuthenticatedInfluencersRoute: typeof AuthenticatedInfluencersRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -422,6 +443,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDeliverablesRoute: AuthenticatedDeliverablesRoute,
   AuthenticatedInfluencersRoute: AuthenticatedInfluencersRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,

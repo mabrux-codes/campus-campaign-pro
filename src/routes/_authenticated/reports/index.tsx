@@ -3,14 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, AlertCircle, Clock } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { usePendingReports } from "@/lib/pending-reports";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   component: ReportsList,
 });
 
 function ReportsList() {
+  const { data: pending = [] } = usePendingReports();
+
   const { data = [], isLoading } = useQuery({
     queryKey: ["all-reports"],
     queryFn: async () => {
@@ -34,6 +38,39 @@ function ReportsList() {
           <Link to="/reports/new"><Plus className="mr-2 h-4 w-4" /> New report</Link>
         </Button>
       </div>
+
+      {pending.length > 0 && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base font-medium">
+              <AlertCircle className="h-4 w-4 text-warning" />
+              Pending reports
+              <Badge variant="outline" className="ml-1 border-warning/40 bg-warning/10 text-foreground">
+                {pending.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {pending.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning/30 bg-background p-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{p.name}</p>
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    Ended {formatDistanceToNow(new Date(p.end_date), { addSuffix: true })} · {p.university_name}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning/40 bg-warning/15 text-foreground">Pending</Badge>
+                  <Button asChild size="sm">
+                    <Link to="/reports/new" search={{ campaign: p.id }}>Submit report</Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="surface-card overflow-hidden">
         {isLoading ? (

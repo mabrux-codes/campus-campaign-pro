@@ -105,7 +105,15 @@ export type Database = {
           label?: string
           workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deliverables_catalog_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       influencer_profiles: {
         Row: {
@@ -144,7 +152,15 @@ export type Database = {
           updated_at?: string
           workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "influencer_profiles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       influencers: {
         Row: {
@@ -485,6 +501,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { _token: string }; Returns: string }
       can_admin_workspace: {
         Args: { _user: string; _ws: string }
         Returns: boolean
@@ -512,6 +529,18 @@ export type Database = {
       is_workspace_member: {
         Args: { _user: string; _ws: string }
         Returns: boolean
+      }
+      lookup_invitation: {
+        Args: { _token: string }
+        Returns: {
+          accepted_at: string
+          email: string
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          workspace_id: string
+          workspace_name: string
+        }[]
       }
       notify_due_campaign_reports: { Args: never; Returns: number }
       owns_campaign: {

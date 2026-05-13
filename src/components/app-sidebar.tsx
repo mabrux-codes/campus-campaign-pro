@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Megaphone, FileBarChart, User, LineChart, LogOut, Users, Sparkles, Bell, Settings } from "lucide-react";
+import { LayoutDashboard, Megaphone, FileBarChart, User, LineChart, LogOut, Users, Sparkles, Bell, Settings, ListChecks } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,11 +17,13 @@ import { BrandLockup, BrandMark } from "@/components/brand";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
+import { usePendingReports } from "@/lib/pending-reports";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Influencers", url: "/influencers", icon: Sparkles },
+  { title: "Deliverables", url: "/deliverables", icon: ListChecks },
   { title: "Reports", url: "/reports", icon: FileBarChart },
   { title: "Analytics", url: "/analytics", icon: LineChart },
   { title: "Team", url: "/team", icon: Users },
@@ -36,6 +38,8 @@ export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
+  const { data: pendingReports = [] } = usePendingReports();
+  const pendingCount = pendingReports.length;
 
   return (
     <Sidebar collapsible="icon">
@@ -50,7 +54,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((it) => {
                 const active = path === it.url || path.startsWith(it.url + "/");
-                const showBadge = it.url === "/notifications" && unreadCount > 0;
+                let badgeCount = 0;
+                if (it.url === "/notifications") badgeCount = unreadCount;
+                else if (it.url === "/reports") badgeCount = pendingCount;
+                const showBadge = badgeCount > 0;
                 return (
                   <SidebarMenuItem key={it.url}>
                     <SidebarMenuButton asChild isActive={active}>
@@ -58,8 +65,8 @@ export function AppSidebar() {
                         <it.icon className="h-4 w-4" />
                         {!collapsed && <span className="flex-1">{it.title}</span>}
                         {showBadge && (
-                          <span className={`inline-flex items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground ${collapsed ? "absolute right-1 top-1 h-4 min-w-4" : "h-5 min-w-5"}`}>
-                            {unreadCount > 99 ? "99+" : unreadCount}
+                          <span className={`inline-flex items-center justify-center rounded-full ${it.url === "/reports" ? "bg-warning text-warning-foreground" : "bg-primary text-primary-foreground"} px-1.5 text-[10px] font-semibold ${collapsed ? "absolute right-1 top-1 h-4 min-w-4" : "h-5 min-w-5"}`}>
+                            {badgeCount > 99 ? "99+" : badgeCount}
                           </span>
                         )}
                       </Link>

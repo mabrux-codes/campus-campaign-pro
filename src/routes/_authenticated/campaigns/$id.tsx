@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,19 @@ function CampaignDetail() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { currency } = useCurrency();
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteCampaign = async () => {
+    if (!confirm("Delete this campaign? This will also delete its reports, attachments, and influencer entries. This cannot be undone.")) return;
+    setDeleting(true);
+    const { error } = await supabase.from("campaigns").delete().eq("id", id);
+    setDeleting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Campaign deleted");
+    qc.invalidateQueries({ queryKey: ["campaigns-list"] });
+    navigate({ to: "/campaigns" });
+  };
 
   const { data: campaign } = useQuery({
     queryKey: ["campaign", id],
@@ -150,6 +163,9 @@ function CampaignDetail() {
             <Link to="/reports/new" search={{ campaign: campaign.id }}>
               <FileBarChart className="mr-2 h-4 w-4" /> Submit report
             </Link>
+          </Button>
+          <Button variant="destructive" size="sm" onClick={deleteCampaign} disabled={deleting}>
+            {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Delete
           </Button>
         </div>
       </div>
