@@ -242,6 +242,87 @@ function NewInfluencerDialog({ onCreated }: { onCreated: () => void }) {
   );
 }
 
+function EditInfluencerDialog({ profile, onSaved }: { profile: Profile; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    name: profile.name,
+    platform: profile.platform ?? "",
+    handle: profile.handle ?? "",
+    followers: profile.followers?.toString() ?? "",
+    avatar_url: profile.avatar_url ?? "",
+  });
+
+  const save = async () => {
+    if (!form.name.trim()) return toast.error("Name is required");
+    setBusy(true);
+    const { error } = await supabase
+      .from("influencer_profiles")
+      .update({
+        name: form.name.trim(),
+        platform: form.platform || null,
+        handle: form.handle || null,
+        followers: form.followers ? Number(form.followers) : null,
+        avatar_url: form.avatar_url || null,
+      })
+      .eq("id", profile.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Updated");
+    setOpen(false);
+    onSaved();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()}>
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit influencer</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent text-lg font-semibold uppercase">
+              {form.avatar_url ? <img src={form.avatar_url} alt={form.name} className="h-full w-full rounded-full object-cover" /> : (form.name || "?").slice(0, 2)}
+            </div>
+            <div className="flex-1 space-y-2">
+              <Label>Avatar URL</Label>
+              <Input value={form.avatar_url} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://…" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Platform</Label>
+            <Select value={form.platform} onValueChange={(v) => setForm({ ...form, platform: v })}>
+              <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+              <SelectContent>
+                {SOCIAL_PLATFORMS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Handle / URL</Label>
+            <Input value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder={form.platform ? handlePlaceholder(form.platform) : ""} />
+          </div>
+          <div className="space-y-2">
+            <Label>Followers</Label>
+            <Input type="number" value={form.followers} onChange={(e) => setForm({ ...form, followers: e.target.value })} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={save} disabled={busy}>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card>
