@@ -15,6 +15,7 @@ export const Route = createFileRoute("/invite/$token")({
 function AcceptInvite() {
   const { token } = Route.useParams();
   const { user, loading } = useAuth();
+  const { refresh: refreshWorkspaces, setCurrent } = useWorkspace();
   const navigate = useNavigate();
   const [invite, setInvite] = useState<any>(null);
   const [busy, setBusy] = useState(false);
