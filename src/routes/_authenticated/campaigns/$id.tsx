@@ -164,6 +164,9 @@ function CampaignDetail() {
               <FileBarChart className="mr-2 h-4 w-4" /> Submit report
             </Link>
           </Button>
+          <Button variant="destructive" size="sm" onClick={deleteCampaign} disabled={deleting}>
+            {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Delete
+          </Button>
         </div>
       </div>
 
