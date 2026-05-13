@@ -27,6 +27,19 @@ function CampaignDetail() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { currency } = useCurrency();
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteCampaign = async () => {
+    if (!confirm("Delete this campaign? This will also delete its reports, attachments, and influencer entries. This cannot be undone.")) return;
+    setDeleting(true);
+    const { error } = await supabase.from("campaigns").delete().eq("id", id);
+    setDeleting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Campaign deleted");
+    qc.invalidateQueries({ queryKey: ["campaigns-list"] });
+    navigate({ to: "/campaigns" });
+  };
 
   const { data: campaign } = useQuery({
     queryKey: ["campaign", id],
