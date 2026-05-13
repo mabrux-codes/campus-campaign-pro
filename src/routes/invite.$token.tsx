@@ -21,32 +21,31 @@ function AcceptInvite() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("workspace_invitations")
-        .select("id,email,role,workspace_id,accepted_at,expires_at,workspace:workspaces(name)")
-        .eq("token", token)
-        .maybeSingle();
-      if (error || !data) return setErr("Invitation not found.");
-      if (data.accepted_at) return setErr("This invitation has already been accepted.");
-      if (new Date(data.expires_at) < new Date()) return setErr("This invitation has expired.");
-      setInvite(data);
+      const { data, error } = await supabase.rpc("lookup_invitation", { _token: token });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) return setErr("Invitation not found.");
+      if (row.accepted_at) return setErr("This invitation has already been accepted.");
+      if (new Date(row.expires_at) < new Date()) return setErr("This invitation has expired.");
+      setInvite({
+        id: row.id,
+        email: row.email,
+        role: row.role,
+        workspace_id: row.workspace_id,
+        workspace: { name: row.workspace_name },
+      });
     })();
   }, [token]);
 
   const accept = async () => {
     if (!user || !invite) return;
     setBusy(true);
-    const { error } = await supabase.from("workspace_members").insert({
-      workspace_id: invite.workspace_id,
-      user_id: user.id,
-      role: invite.role,
-    });
-    if (error && !error.message.includes("duplicate")) {
+    const { data, error } = await supabase.rpc("accept_invitation", { _token: token });
+    if (error) {
       setBusy(false);
       return toast.error(error.message);
     }
-    await supabase.from("workspace_invitations").update({ accepted_at: new Date().toISOString() }).eq("id", invite.id);
-    if (typeof window !== "undefined") localStorage.setItem("ws.current", invite.workspace_id);
+    const wsId = (data as string) ?? invite.workspace_id;
+    if (typeof window !== "undefined") localStorage.setItem("ws.current", wsId);
     toast.success("Welcome to the team!");
     navigate({ to: "/dashboard" });
   };
