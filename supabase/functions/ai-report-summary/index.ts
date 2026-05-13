@@ -31,14 +31,23 @@ Deno.serve(async (req) => {
     if (!apiKey) return json({ error: "AI not configured" }, 500);
 
     const prompt = `You analyze digital marketing campaign reports for university clients.
-Return a tight, scannable summary in markdown with three sections:
-**Highlights** (3 bullets), **Gaps / risks** (2-3 bullets), **Recommended next actions** (3 bullets).
+Return a tight, scannable summary in clean GitHub-flavoured markdown.
 
-Campaign: ${(report as any).campaign?.name} for ${(report as any).campaign?.university_name}
-Type: ${(report as any).campaign?.type}
-Objectives: ${(report as any).campaign?.objectives ?? "n/a"}
-Report kind: ${report.type}
-Report metrics (JSON): ${JSON.stringify(report.data)}`;
+Rules:
+- Do NOT include a title heading or restate the campaign name. Start directly at the first section.
+- Use exactly these three sections, each as an H3 heading on its own line:
+  ### Highlights
+  ### Gaps & Risks
+  ### Recommended Next Actions
+- Under each heading use 3 short bullet points starting with "- ".
+- Do not include the literal campaign name or university name in any bullet unless the data clearly warrants it.
+- Be concrete, reference numbers from the metrics, no fluff.
+
+Context (do not echo back):
+- Campaign type: ${(report as any).campaign?.type}
+- Objectives: ${(report as any).campaign?.objectives ?? "n/a"}
+- Report kind: ${report.type}
+- Report metrics (JSON): ${JSON.stringify(report.data)}`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
