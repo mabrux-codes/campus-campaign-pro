@@ -17,11 +17,13 @@ import { BrandLockup, BrandMark } from "@/components/brand";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
+import { usePendingReports } from "@/lib/pending-reports";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Influencers", url: "/influencers", icon: Sparkles },
+  { title: "Deliverables", url: "/deliverables", icon: ListChecks },
   { title: "Reports", url: "/reports", icon: FileBarChart },
   { title: "Analytics", url: "/analytics", icon: LineChart },
   { title: "Team", url: "/team", icon: Users },
