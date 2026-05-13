@@ -48,6 +48,8 @@ function AcceptInvite() {
     }
     const wsId = (data as string) ?? invite.workspace_id;
     if (typeof window !== "undefined") localStorage.setItem("ws.current", wsId);
+    await refreshWorkspaces();
+    setCurrent(wsId);
     toast.success("Welcome to the team!");
     navigate({ to: "/dashboard" });
   };
