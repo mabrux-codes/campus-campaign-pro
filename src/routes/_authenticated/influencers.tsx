@@ -139,9 +139,15 @@ function InfluencersPage() {
                       <p className="truncate font-medium">{p.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{p.handle || "—"}</p>
                     </div>
-                    <Button size="icon" variant="ghost" className="opacity-0 transition group-hover:opacity-100" onClick={() => remove(p.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex gap-1 opacity-0 transition group-hover:opacity-100">
+                      <EditInfluencerDialog
+                        profile={p}
+                        onSaved={() => qc.invalidateQueries({ queryKey: ["influencer-profiles", current?.id] })}
+                      />
+                      <Button size="icon" variant="ghost" onClick={() => remove(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {p.platform && <Badge variant="outline">{p.platform}</Badge>}
