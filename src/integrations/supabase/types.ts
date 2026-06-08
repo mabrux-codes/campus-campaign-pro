@@ -125,6 +125,7 @@ export type Database = {
           name: string
           notes: string | null
           platform: string | null
+          platforms: Json
           updated_at: string
           workspace_id: string
         }
@@ -137,6 +138,7 @@ export type Database = {
           name: string
           notes?: string | null
           platform?: string | null
+          platforms?: Json
           updated_at?: string
           workspace_id: string
         }
@@ -149,6 +151,7 @@ export type Database = {
           name?: string
           notes?: string | null
           platform?: string | null
+          platforms?: Json
           updated_at?: string
           workspace_id?: string
         }
