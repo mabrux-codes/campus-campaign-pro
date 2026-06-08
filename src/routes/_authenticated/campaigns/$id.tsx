@@ -386,7 +386,7 @@ function Section({ title, body }: { title: string; body: string | null }) {
     </div>
   );
 }
-function Row({ k, v }: { k: string; v: string | null | undefined }) {
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 border-b border-border py-1.5 last:border-0">
       <span className="text-muted-foreground">{k}</span>
