@@ -142,30 +142,72 @@ function Dashboard() {
             <CardTitle className="text-base font-medium">Upcoming reports</CardTitle>
           </CardHeader>
           <CardContent>
-            {upcoming.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-center text-sm text-muted-foreground">
-                <FileBarChart className="h-6 w-6" />
-                Nothing due — you're all caught up.
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {upcoming.map((c) => (
-                  <li key={c.id} className="flex items-start justify-between gap-3 text-sm">
-                    <div>
-                      <Link to="/campaigns/$id" params={{ id: c.id }} className="font-medium hover:underline">
-                        {c.name}
-                      </Link>
-                      <p className="text-xs text-muted-foreground">{c.university_name}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(c.end_date!), "MMM d")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Upcoming reports</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {upcoming.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
+                  <FileBarChart className="h-6 w-6" />
+                  Nothing due — you're all caught up.
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {upcoming.map((c) => (
+                    <li key={c.id} className="flex items-start justify-between gap-3 text-sm">
+                      <div>
+                        <Link to="/campaigns/$id" params={{ id: c.id }} className="font-medium hover:underline">
+                          {c.name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">{c.university_name}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(c.end_date!), "MMM d")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className={pendingReports.length > 0 ? "border-warning/50" : undefined}>
+            <CardHeader>
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <AlertCircle className={`h-4 w-4 ${pendingReports.length > 0 ? "text-warning" : "text-muted-foreground"}`} />
+                Pending reports
+                {pendingReports.length > 0 && (
+                  <span className="rounded-full bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground">
+                    {pendingReports.length}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingReports.length === 0 ? (
+                <p className="py-2 text-center text-sm text-muted-foreground">No pending reports.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {pendingReports.slice(0, 5).map((c) => (
+                    <li key={c.id} className="flex items-start justify-between gap-3 text-sm">
+                      <div className="min-w-0">
+                        <Link to="/campaigns/$id" params={{ id: c.id }} className="font-medium hover:underline">
+                          {c.name}
+                        </Link>
+                        <p className="truncate text-xs text-muted-foreground">{c.university_name}</p>
+                      </div>
+                      <Button asChild size="sm" variant="outline" className="h-7 shrink-0 text-xs">
+                        <Link to="/reports/new" search={{ campaign: c.id }}>Submit</Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
