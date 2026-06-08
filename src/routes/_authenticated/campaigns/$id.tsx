@@ -14,9 +14,30 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { exportCampaignPdf, exportCampaignExcel } from "@/lib/exports";
 import { useAuth } from "@/lib/auth";
-import { useCurrency, formatMoney } from "@/lib/currency";
+import { useCurrency, formatMoney, type Currency } from "@/lib/currency";
+import { getRates, convert } from "@/lib/fx";
+import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+function BudgetDisplay({ amount, currency }: { amount: number; currency: Currency }) {
+  const [kes, setKes] = useState<number | null>(null);
+  useEffect(() => {
+    if (currency === "KES") return;
+    getRates().then((r) => {
+      if (!r) return;
+      const v = convert(amount, currency, "KES", r.rates);
+      if (v != null) setKes(v);
+    });
+  }, [amount, currency]);
+  if (currency === "KES") return <>{formatMoney(amount, "KES")}</>;
+  return (
+    <span>
+      {formatMoney(amount, currency)}
+      {kes != null && <span className="ml-2 text-xs text-muted-foreground">≈ {formatMoney(kes, "KES")}</span>}
+    </span>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/campaigns/$id")({
   component: CampaignDetail,
