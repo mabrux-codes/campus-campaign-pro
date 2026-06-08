@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Megaphone, FileBarChart, User, LineChart, LogOut, Users, Sparkles, Bell, Settings, ListChecks } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +14,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { BrandLockup, BrandMark } from "@/components/brand";
+import { BrandMark } from "@/components/brand";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
 import { usePendingReports } from "@/lib/pending-reports";
@@ -32,6 +34,34 @@ const items = [
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
+function OrgLockup({ collapsed }: { collapsed: boolean }) {
+  const { user } = useAuth();
+  const { data: profile } = useQuery({
+    queryKey: ["profile-brand", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("company_name,company_logo_url").eq("id", user!.id).single();
+      return data;
+    },
+  });
+  const name = profile?.company_name?.trim() || "Lumen";
+  const logo = profile?.company_logo_url;
+
+  const logoEl = logo ? (
+    <img src={logo} alt={name} className="h-7 w-7 rounded-md object-contain bg-card" />
+  ) : (
+    <BrandMark size={28} />
+  );
+
+  if (collapsed) return logoEl;
+  return (
+    <div className="flex items-center gap-2">
+      {logoEl}
+      <span className="font-display truncate text-xl leading-none">{name}</span>
+    </div>
+  );
+}
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -44,7 +74,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="space-y-3 px-3 py-4">
-        {collapsed ? <BrandMark size={28} /> : <BrandLockup />}
+        <OrgLockup collapsed={collapsed} />
         {!collapsed && <WorkspaceSwitcher />}
       </SidebarHeader>
       <SidebarContent>
