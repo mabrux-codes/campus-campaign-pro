@@ -137,7 +137,13 @@ function ProfilePage() {
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <PhoneInput
+                international
+                defaultCountry="US"
+                value={form.phone || undefined}
+                onChange={(v) => setForm({ ...form, phone: (v as string) ?? "" })}
+                className="phone-input flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm"
+              />
             </div>
             <div className="space-y-2">
               <Label>Title</Label>
