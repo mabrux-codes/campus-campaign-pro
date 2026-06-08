@@ -180,11 +180,13 @@ function CampaignDetail() {
           <Button variant="outline" size="sm" onClick={doExportExcel} disabled={exporting !== null}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
           </Button>
-          <Button asChild size="sm">
-            <Link to="/reports/new" search={{ campaign: campaign.id }}>
-              <FileBarChart className="mr-2 h-4 w-4" /> Submit report
-            </Link>
-          </Button>
+          {reports.length === 0 && (
+            <Button asChild size="sm">
+              <Link to="/reports/new" search={{ campaign: campaign.id }}>
+                <FileBarChart className="mr-2 h-4 w-4" /> Submit report
+              </Link>
+            </Button>
+          )}
           <Button variant="destructive" size="sm" onClick={deleteCampaign} disabled={deleting}>
             {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Delete
           </Button>
