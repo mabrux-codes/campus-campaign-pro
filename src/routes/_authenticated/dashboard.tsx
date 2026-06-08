@@ -52,6 +52,8 @@ function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: pendingReports = [] } = usePendingReports();
+
   const stats = {
     total: campaigns.length,
     active: campaigns.filter((c) => c.status === "active").length,
