@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/lib/workspace";
+import { COUNTRIES } from "@/lib/countries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ResponsiveContainer,
@@ -22,11 +24,21 @@ export const Route = createFileRoute("/_authenticated/analytics")({
 
 const COLORS = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)", "var(--color-chart-4)", "var(--color-chart-5)"];
 
+const countryByCode: Record<string, string> = Object.fromEntries(COUNTRIES.map((c) => [c.code, c.name]));
+const flag = (code: string) => {
+  if (!code || code.length !== 2) return "";
+  const A = 0x1f1e6;
+  return String.fromCodePoint(A + code.charCodeAt(0) - 65) + String.fromCodePoint(A + code.charCodeAt(1) - 65);
+};
+
 function Analytics() {
+  const { current } = useWorkspace();
   const { data: campaigns = [] } = useQuery({
-    queryKey: ["analytics-campaigns"],
+    queryKey: ["analytics-campaigns", current?.id ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("campaigns").select("id,name,type,client_country,status");
+      let q = supabase.from("campaigns").select("id,name,type,client_country,status,workspace_id");
+      if (current?.id) q = q.eq("workspace_id", current.id);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
@@ -34,11 +46,17 @@ function Analytics() {
 
   const byCountry = Object.entries(
     campaigns.reduce<Record<string, number>>((acc, c) => {
-      const k = c.client_country || "Unknown";
-      acc[k] = (acc[k] ?? 0) + 1;
+      if (!c.client_country) return acc;
+      acc[c.client_country] = (acc[c.client_country] ?? 0) + 1;
       return acc;
     }, {}),
-  ).map(([country, count]) => ({ country, count }));
+  )
+    .map(([code, count]) => {
+      const name = countryByCode[code] ?? code;
+      const label = code.length === 2 ? `${flag(code)} ${name}` : name;
+      return { country: label, count };
+    })
+    .sort((a, b) => b.count - a.count);
 
   const byType = [
     { name: "Paid", value: campaigns.filter((c) => c.type === "paid").length },
