@@ -45,19 +45,29 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2" align="start">
-        <div className="mb-2 text-xs font-medium text-muted-foreground">Workspaces</div>
+        <div className="mb-2 text-xs font-medium text-muted-foreground">Switch workspace</div>
         <ul className="space-y-0.5">
-          {workspaces.map((w) => (
-            <li key={w.id}>
-              <button
-                onClick={() => { setCurrent(w.id); setOpen(false); }}
-                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-              >
-                <span className="truncate">{w.name}</span>
-                {current?.id === w.id && <Check className="h-3.5 w-3.5" />}
-              </button>
-            </li>
-          ))}
+          {workspaces.map((w) => {
+            const isAdmin = w.role === "owner" || w.role === "admin";
+            return (
+              <li key={w.id}>
+                <button
+                  onClick={() => { setCurrent(w.id); setOpen(false); }}
+                  className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <span className="truncate">{w.name}</span>
+                  <span className="flex items-center gap-1">
+                    {isAdmin && (
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        {w.role}
+                      </span>
+                    )}
+                    {current?.id === w.id && <Check className="h-3.5 w-3.5" />}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
         <div className="mt-2 border-t border-border pt-2">
           <div className="flex gap-1">

@@ -10,13 +10,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { exportCampaignPdf, exportCampaignExcel } from "@/lib/exports";
 import { useAuth } from "@/lib/auth";
-import { useCurrency, formatMoney } from "@/lib/currency";
+import { useCurrency, formatMoney, type Currency } from "@/lib/currency";
+import { getRates, convert } from "@/lib/fx";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+function BudgetDisplay({ amount, currency }: { amount: number; currency: Currency }) {
+  const [kes, setKes] = useState<number | null>(null);
+  useEffect(() => {
+    if (currency === "KES") return;
+    getRates().then((r) => {
+      if (!r) return;
+      const v = convert(amount, currency, "KES", r.rates);
+      if (v != null) setKes(v);
+    });
+  }, [amount, currency]);
+  if (currency === "KES") return <>{formatMoney(amount, "KES")}</>;
+  return (
+    <span>
+      {formatMoney(amount, currency)}
+      {kes != null && <span className="ml-2 text-xs text-muted-foreground">≈ {formatMoney(kes, "KES")}</span>}
+    </span>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/campaigns/$id")({
   component: CampaignDetail,
@@ -159,11 +179,13 @@ function CampaignDetail() {
           <Button variant="outline" size="sm" onClick={doExportExcel} disabled={exporting !== null}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
           </Button>
-          <Button asChild size="sm">
-            <Link to="/reports/new" search={{ campaign: campaign.id }}>
-              <FileBarChart className="mr-2 h-4 w-4" /> Submit report
-            </Link>
-          </Button>
+          {reports.length === 0 && (
+            <Button asChild size="sm">
+              <Link to="/reports/new" search={{ campaign: campaign.id }}>
+                <FileBarChart className="mr-2 h-4 w-4" /> Submit report
+              </Link>
+            </Button>
+          )}
           <Button variant="destructive" size="sm" onClick={deleteCampaign} disabled={deleting}>
             {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Delete
           </Button>
@@ -203,7 +225,7 @@ function CampaignDetail() {
             <Row k="Phone" v={campaign.contact_phone} />
             {campaign.type === "paid" && (
               <>
-                <Row k="Budget" v={campaign.paid_budget ? formatMoney(Number(campaign.paid_budget), currency) : "—"} />
+                <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} currency={currency} /> : "—"} />
                 <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               </>
             )}
@@ -363,7 +385,7 @@ function Section({ title, body }: { title: string; body: string | null }) {
     </div>
   );
 }
-function Row({ k, v }: { k: string; v: string | null | undefined }) {
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 border-b border-border py-1.5 last:border-0">
       <span className="text-muted-foreground">{k}</span>
@@ -427,7 +449,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => v
           <Row k="Window" v={campaign.start_date && campaign.end_date ? `${campaign.start_date} → ${campaign.end_date}` : "—"} />
           {campaign.type === "paid" && (
             <>
-              <Row k="Budget" v={campaign.paid_budget ? formatMoney(Number(campaign.paid_budget), currency) : "—"} />
+              <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} currency={currency} /> : "—"} />
               <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               <Row k="Uses influencers" v={campaign.uses_influencers ? "Yes" : "No"} />
             </>

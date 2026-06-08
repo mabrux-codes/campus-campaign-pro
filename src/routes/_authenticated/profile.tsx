@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
@@ -135,7 +137,13 @@ function ProfilePage() {
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <PhoneInput
+                international
+                defaultCountry="US"
+                value={form.phone || undefined}
+                onChange={(v) => setForm({ ...form, phone: (v as string) ?? "" })}
+                className="phone-input flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm"
+              />
             </div>
             <div className="space-y-2">
               <Label>Title</Label>

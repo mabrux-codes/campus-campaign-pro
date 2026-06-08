@@ -183,3 +183,16 @@
     border-radius: var(--radius-lg);
   }
 }
+
+.phone-input .PhoneInputInput {
+  background: transparent;
+  border: 0;
+  outline: none;
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+}
+.phone-input .PhoneInputCountryIcon {
+  height: 1em;
+  width: 1.5em;
+}

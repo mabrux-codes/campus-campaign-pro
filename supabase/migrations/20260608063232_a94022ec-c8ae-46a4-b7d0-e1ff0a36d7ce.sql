@@ -1,0 +1,1 @@
+ALTER TABLE public.influencer_profiles ADD COLUMN IF NOT EXISTS platforms jsonb NOT NULL DEFAULT '[]'::jsonb;
