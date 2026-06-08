@@ -10,13 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { exportCampaignPdf, exportCampaignExcel } from "@/lib/exports";
 import { useAuth } from "@/lib/auth";
 import { useCurrency, formatMoney, type Currency } from "@/lib/currency";
 import { getRates, convert } from "@/lib/fx";
-import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
