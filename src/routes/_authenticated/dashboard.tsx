@@ -137,11 +137,6 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-medium">Upcoming reports</CardTitle>
-          </CardHeader>
-          <CardContent>
         <div className="space-y-4">
           <Card>
             <CardHeader>
