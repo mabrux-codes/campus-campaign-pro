@@ -258,17 +258,41 @@ function NewReport() {
           )}
 
           {step === 1 && (
-            <div className="space-y-2">
-              <Label>Report type</Label>
-              <Select value={type} onValueChange={(v) => { setType(v as typeof type); setValues({}); setTouched({}); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">Paid ads</SelectItem>
-                  <SelectItem value="influencer">Influencer</SelectItem>
-                  <SelectItem value="organic">Organic</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Determines which metrics you'll fill in next.</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Report type</Label>
+                <Select value={type} onValueChange={(v) => { setType(v as typeof type); setValues({}); setTouched({}); setIsStories(false); setInfluencerProfileId(""); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paid">Paid ads</SelectItem>
+                    <SelectItem value="influencer">Influencer</SelectItem>
+                    <SelectItem value="organic">Organic</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Determines which metrics you'll fill in next.</p>
+              </div>
+              {type === "influencer" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Influencer <span className="text-destructive">*</span></Label>
+                    <Select value={influencerProfileId} onValueChange={setInfluencerProfileId}>
+                      <SelectTrigger><SelectValue placeholder="Pick an influencer" /></SelectTrigger>
+                      <SelectContent>
+                        {workspaceProfiles.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {workspaceProfiles.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No influencers in this workspace yet.</p>
+                    )}
+                  </div>
+                  <label className="flex items-center gap-2 rounded-md border border-border p-3 text-sm">
+                    <input type="checkbox" checked={isStories} onChange={(e) => { setIsStories(e.target.checked); setValues({}); setTouched({}); }} />
+                    <span>Instagram Stories — capture story-specific metrics for engagement averaging</span>
+                  </label>
+                </>
+              )}
             </div>
           )}
 
