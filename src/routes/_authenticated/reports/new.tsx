@@ -90,6 +90,8 @@ function NewReport() {
   const [step, setStep] = useState(0);
   const [campaignId, setCampaignId] = useState(preselected ?? "");
   const [type, setType] = useState<"paid" | "influencer" | "organic">("paid");
+  const [isStories, setIsStories] = useState(false);
+  const [influencerProfileId, setInfluencerProfileId] = useState<string>("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
@@ -99,14 +101,29 @@ function NewReport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaigns")
-        .select("id,name,university_name,end_date,status")
+        .select("id,name,university_name,end_date,status,workspace_id")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  const fields = FIELDS[type];
+  const selectedCampaignForWs = campaigns.find((c) => c.id === campaignId);
+  const { data: workspaceProfiles = [] } = useQuery({
+    queryKey: ["influencer-profiles-for-report", selectedCampaignForWs?.workspace_id],
+    enabled: !!selectedCampaignForWs?.workspace_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("influencer_profiles")
+        .select("id,name")
+        .eq("workspace_id", selectedCampaignForWs!.workspace_id!)
+        .order("name");
+      return data ?? [];
+    },
+  });
+
+  const fieldsKey = type === "influencer" && isStories ? "influencer_ig_stories" : type;
+  const fields = FIELDS[fieldsKey];
   const errors = useMemo(() => {
     const out: Record<string, string> = {};
     for (const f of fields) {
