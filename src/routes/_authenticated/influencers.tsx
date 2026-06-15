@@ -217,7 +217,11 @@ function InfluencersPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => {
             const agg = aggByProfile[p.id];
-            const avgEng = agg && agg.engs.length ? agg.engs.reduce((s, n) => s + n, 0) / agg.engs.length : null;
+            const storyRates = storyEngByProfile[p.id] ?? [];
+            const storyAvg = storyRates.length ? storyRates.reduce((s, n) => s + n, 0) / storyRates.length : null;
+            const campaignAvg = agg && agg.engs.length ? agg.engs.reduce((s, n) => s + n, 0) / agg.engs.length : null;
+            const avgEng = storyAvg ?? campaignAvg;
+            const avgLabel = storyAvg != null ? `${storyAvg.toFixed(1)}% (stories)` : campaignAvg != null ? `${campaignAvg.toFixed(1)}%` : "—";
             const plats = normalizePlatforms(p);
             return (
               <Card key={p.id} className="group transition hover:shadow-sm">
