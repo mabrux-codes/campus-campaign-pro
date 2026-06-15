@@ -1,48 +1,50 @@
-# Plan
+## 1. Live security findings (admins/owners)
 
-## 1. Dashboard — Upcoming + Pending reports
-In `src/routes/_authenticated/dashboard.tsx`:
-- Keep current "Upcoming reports" card (campaigns with end_date in the future).
-- Add a second "Pending reports" card using existing `usePendingReports()` hook — lists campaigns past end_date with no submitted report. Each item links to `/campaigns/$id` with a "Submit report" CTA.
+**DB migration**
+- New table `public.security_findings`: `id`, `workspace_id` (nullable for project-wide), `severity` (enum: low/medium/high/critical), `title`, `description`, `source` (text, e.g. 'wiz','supabase','manual'), `status` (open/resolved/ignored), `created_at`, `acknowledged_by` (uuid[]).
+- GRANTs: `authenticated` SELECT/UPDATE; `service_role` ALL. No `anon`.
+- RLS: SELECT/UPDATE only when `can_admin_workspace(workspace_id, auth.uid())` (or `workspace_id IS NULL` for global, restricted to admins of any workspace via `has_role` check — fall back to per-workspace).
+- Enable realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.security_findings`.
 
-## 2. Campaign detail — Dual currency budget
-In `src/routes/_authenticated/campaigns/$id.tsx`, under the "Paid campaign details" section:
-- Display total ads budget in the campaign's set currency **and** KES equivalent on a second line (e.g. `$1,200  ≈ KSh 154,800`).
-- If the campaign currency is already KES, show only the KES value (no conversion).
-- Use existing `src/lib/fx.ts` for conversion.
+**Frontend**
+- Extend `src/lib/notifications.tsx` (or new `src/lib/security-alerts.tsx`) to subscribe to `security_findings` inserts when current user is admin/owner in any workspace; on `high|critical` insert → sonner toast (red, persistent) + beep.
+- New unread badge: count of `severity in ('high','critical') AND status='open' AND NOT (auth.uid() = ANY(acknowledged_by))`.
+- In `src/components/app-sidebar.tsx`, render a red dot/number badge next to the Settings nav item using that count.
+- In `src/routes/_authenticated/settings.tsx`, add a "Security findings" card (admins only) listing open findings with Acknowledge / Mark resolved buttons; acknowledging appends `auth.uid()` to `acknowledged_by`.
 
-## 3. Influencer profiles — Avatar upload + multi-platform
-- Schema: add `platforms jsonb default '[]'` to `influencer_profiles` storing `[{platform, handle, followers}, ...]`. Keep legacy single columns for backward compat (read both, prefer new array).
-- `src/routes/_authenticated/influencers.tsx` EditInfluencerDialog:
-  - Replace avatar URL field with drag-and-drop / click-to-upload using existing `avatars` storage bucket (re-using the profile pattern).
-  - Replace single platform/handle/followers trio with a repeatable list: add/remove rows, each with platform dropdown, handle, followers count.
-- "View activity" button on each card opens a dialog listing campaigns the influencer is linked to (via `influencers.profile_id`) grouped into Ongoing (status active) and Done (completed). Each row links to the campaign.
+## 2. Google sign-in + provider status on Settings
 
-## 4. Reports — Hide submit button after submission
-In `src/routes/_authenticated/campaigns/$id.tsx`, conditionally render the "Submit report" button only when no report exists for the campaign (already query reports there; gate the button on `reports.length === 0`).
+- Call `supabase--configure_social_auth` with `providers: ["google"]` (keep email enabled).
+- Add "Sign in with Google" button on `src/routes/login.tsx` and `src/routes/signup.tsx` using `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` per the Lovable Cloud managed flow.
+- On `settings.tsx`, add a "Connected accounts" card showing Google + Apple status. Source: `supabase.auth.getUser()` → `user.identities[]`; row for each provider with "Connected" badge if present, else a "Connect" button (Google → `linkIdentity({ provider:'google' })`; Apple → disabled placeholder "Not configured" since Apple is not enabled this turn).
 
-## 5. Analytics — Country chart from campaign selection
-Already pulls `client_country` from `campaigns`. Fix: map raw country code/name through `src/lib/countries.ts` to show the flag + readable name, and filter out null/empty. No data source change.
+## 3. Influencer availability tied to active campaigns
 
-## 6. Profile — Phone with country code
-- Add `bun add react-phone-number-input` (lightweight, has all country dial codes + flags).
-- In `src/routes/_authenticated/profile.tsx`, replace plain phone Input with `<PhoneInput international defaultCountry={...} />`. Store full E.164 string in `profiles.phone`.
+**DB migration**
+- New table `public.campaign_influencers`: `id`, `campaign_id` FK→campaigns (cascade), `influencer_profile_id` FK→influencer_profiles (cascade), `workspace_id`, `created_at`. Unique(campaign_id, influencer_profile_id).
+- GRANTs + RLS by `is_workspace_member(workspace_id, auth.uid())` for SELECT and `can_edit_workspace` for write.
 
-## 7. Workspace switcher — Move/transfer admin-only
-In `src/components/workspace-switcher.tsx`:
-- Show all workspaces the user belongs to (already does).
-- For each workspace where the user's role is `owner` or `admin`, allow it to be selected/switched (current behavior already switches). Clarify wording — "Switch" for member workspaces, indicate role badge. The DB already enforces admin-only edits via `can_admin_workspace`.
-- No schema change needed — switching `current` workspace already scopes campaigns globally via `useWorkspace()`.
+**Frontend**
+- On `campaigns/$id.tsx`, add an "Influencers" section where editors pick from available profiles (filtered: not already assigned to any campaign with status='active'); insert into `campaign_influencers`.
+- On `influencers.tsx`, the main list filters out any profile that has a row in `campaign_influencers` joined to a campaign with `status='active'`. A separate tab "In active campaigns" shows them read-only. Completed/cancelled/draft/paused campaigns do NOT hide the influencer (so they become available again automatically once status flips to `completed`).
 
-## 8. Sidebar branding — Org name + logo
-In `src/components/app-sidebar.tsx` (and wherever `BrandLockup` is used in the sidebar header):
-- Replace `BrandLockup` in the sidebar with the current user's `profiles.company_name` (fallback "Lumen") and `profiles.company_logo_url` rendered as a PNG `<img>` (fallback `BrandMark` icon).
-- Read from a small `useQuery(["profile", user.id])` or extend an existing profile context.
+## 4. Average engagement from Instagram stories reports
+
+**Report form change (`reports/new.tsx`)**
+- For `influencer` type, when `platform = "Instagram"` and add a new toggle "Instagram Stories": render stories-specific fields: `impressions` (req), `replies` (req), `link_clicks`, `sticker_taps`, plus existing `influencer` link.
+- Add a required `influencer_profile_id` select (workspace influencers) on `influencer` reports; persisted into `reports.data.influencer_profile_id`.
+
+**Computation**
+- New helper `src/lib/influencer-stats.ts`:
+  - For each report where `type='influencer'` AND `data.platform='Instagram'` AND `data.format='stories'` AND `data.influencer_profile_id = X`:
+    `rate = (replies + link_clicks + sticker_taps) / impressions` (skip if impressions <= 0).
+  - `avg_engagement = mean(rate)`.
+- Display on the influencer profile card and the activity dialog in `influencers.tsx` (e.g. "Avg story engagement: 4.2% (n=7)").
 
 ## Technical notes
-- New dep: `react-phone-number-input` (~30kB, edge-safe, pure JS).
-- One migration: `ALTER TABLE influencer_profiles ADD COLUMN platforms jsonb NOT NULL DEFAULT '[]'::jsonb;`
-- Avatar uploads reuse `avatars` bucket; path `influencers/<workspace_id>/<id>-<filename>`.
-- FX conversion is already cached in `src/lib/fx.ts` — no new API.
 
-Ready to switch to build mode and implement?
+- Migrations order: (a) `security_findings` + realtime, (b) `campaign_influencers`. Each follows CREATE → GRANT → RLS → POLICY.
+- Realtime: rely on RLS for `security_findings` so non-admin users don't receive payloads.
+- No new server functions required; all reads/writes use the authenticated browser client respecting RLS.
+- `acknowledged_by uuid[]` updated with `array_append` via supabase update.
+- Apple sign-in is NOT being enabled; the Settings UI just labels it "Not configured" — wire a real flow later when requested.

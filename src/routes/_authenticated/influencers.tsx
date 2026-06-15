@@ -69,11 +69,19 @@ function InfluencersPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("influencers")
-        .select("profile_id,engagement_rate,campaign_id")
+        .select("profile_id,engagement_rate,campaign_id,campaigns:campaign_id(id,status)")
         .in("profile_id", profileIds);
       return data ?? [];
     },
   });
+
+  const activeProfileIds = useMemo(() => {
+    const s = new Set<string>();
+    campaignRows.forEach((r: any) => {
+      if (r.profile_id && r.campaigns?.status === "active") s.add(r.profile_id);
+    });
+    return s;
+  }, [campaignRows]);
 
   const aggByProfile = useMemo(() => {
     const m: Record<string, { engs: number[]; campaigns: Set<string> }> = {};
@@ -86,23 +94,66 @@ function InfluencersPage() {
     return m;
   }, [campaignRows]);
 
+  const [tab, setTab] = useState<"available" | "active">("available");
+
+  const visibleProfiles = useMemo(
+    () => profiles.filter((p) => tab === "active" ? activeProfileIds.has(p.id) : !activeProfileIds.has(p.id)),
+    [profiles, activeProfileIds, tab],
+  );
+
   const filtered = useMemo(
-    () => profiles.filter((p) => {
+    () => visibleProfiles.filter((p) => {
       if (!q) return true;
       const platformsText = normalizePlatforms(p).map((e) => `${e.platform} ${e.handle}`).join(" ");
       return `${p.name} ${platformsText}`.toLowerCase().includes(q.toLowerCase());
     }),
-    [profiles, q],
+    [visibleProfiles, q],
   );
 
+  // IG stories engagement per influencer from reports
+  const { data: storyReports = [] } = useQuery({
+    queryKey: ["story-reports", current?.id],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("reports")
+        .select("data,campaign_id,campaigns:campaign_id!inner(workspace_id)")
+        .eq("type", "influencer")
+        .eq("campaigns.workspace_id", current!.id);
+      return (data ?? []) as any[];
+    },
+  });
+
+  const storyEngByProfile = useMemo(() => {
+    const m: Record<string, number[]> = {};
+    storyReports.forEach((r: any) => {
+      const d = r.data ?? {};
+      if (String(d.platform).toLowerCase() !== "instagram") return;
+      if (String(d.format).toLowerCase() !== "stories") return;
+      const impressions = Number(d.impressions);
+      if (!Number.isFinite(impressions) || impressions <= 0) return;
+      const replies = Number(d.replies) || 0;
+      const linkClicks = Number(d.link_clicks) || 0;
+      const stickerTaps = Number(d.sticker_taps) || 0;
+      const rate = ((replies + linkClicks + stickerTaps) / impressions) * 100;
+      const pid = d.influencer_profile_id;
+      if (!pid) return;
+      (m[pid] ||= []).push(rate);
+    });
+    return m;
+  }, [storyReports]);
+
+  const allStoryRates = Object.values(storyEngByProfile).flat();
   const totals = {
     total: profiles.length,
     followers: profiles.reduce((a, p) => a + totalFollowers(p), 0),
-    avgEng: (() => {
-      const allEngs = Object.values(aggByProfile).flatMap((a) => a.engs);
-      return allEngs.length ? allEngs.reduce((s, n) => s + n, 0) / allEngs.length : 0;
-    })(),
-    activeCount: Object.values(aggByProfile).filter((a) => a.campaigns.size > 0).length,
+    avgEng: allStoryRates.length
+      ? allStoryRates.reduce((s, n) => s + n, 0) / allStoryRates.length
+      : (() => {
+          const all = Object.values(aggByProfile).flatMap((a) => a.engs);
+          return all.length ? all.reduce((s, n) => s + n, 0) / all.length : 0;
+        })(),
+    activeCount: activeProfileIds.size,
   };
 
   const remove = async (id: string) => {
@@ -130,9 +181,25 @@ function InfluencersPage() {
         <Stat label="Active in campaigns" value={totals.activeCount.toString()} />
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, handle, platform" className="pl-9" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+          <button
+            onClick={() => setTab("available")}
+            className={`rounded-sm px-3 py-1 ${tab === "available" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+          >
+            Available ({profiles.length - activeProfileIds.size})
+          </button>
+          <button
+            onClick={() => setTab("active")}
+            className={`rounded-sm px-3 py-1 ${tab === "active" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+          >
+            In active campaigns ({activeProfileIds.size})
+          </button>
+        </div>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, handle, platform" className="pl-9" />
+        </div>
       </div>
 
       {isLoading ? (
@@ -140,13 +207,21 @@ function InfluencersPage() {
       ) : filtered.length === 0 ? (
         <div className="surface-card flex flex-col items-center gap-2 p-12 text-center">
           <Users className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{profiles.length === 0 ? "No influencers yet — add your first one." : "No matches."}</p>
+          <p className="text-sm text-muted-foreground">
+            {profiles.length === 0
+              ? "No influencers yet — add your first one."
+              : tab === "active" ? "Nobody is on an active campaign right now." : "No matches."}
+          </p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => {
             const agg = aggByProfile[p.id];
-            const avgEng = agg && agg.engs.length ? agg.engs.reduce((s, n) => s + n, 0) / agg.engs.length : null;
+            const storyRates = storyEngByProfile[p.id] ?? [];
+            const storyAvg = storyRates.length ? storyRates.reduce((s, n) => s + n, 0) / storyRates.length : null;
+            const campaignAvg = agg && agg.engs.length ? agg.engs.reduce((s, n) => s + n, 0) / agg.engs.length : null;
+            const avgEng = storyAvg ?? campaignAvg;
+            const avgLabel = storyAvg != null ? `${storyAvg.toFixed(1)}% (stories)` : campaignAvg != null ? `${campaignAvg.toFixed(1)}%` : "—";
             const plats = normalizePlatforms(p);
             return (
               <Card key={p.id} className="group transition hover:shadow-sm">
@@ -178,7 +253,7 @@ function InfluencersPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
                     <Mini label="Followers" value={totalFollowers(p).toLocaleString()} />
-                    <Mini label="Avg Eng." value={avgEng != null ? `${avgEng.toFixed(1)}%` : "—"} />
+                    <Mini label="Avg Eng." value={avgEng != null ? avgLabel : "—"} />
                     <Mini label="Campaigns" value={(agg?.campaigns.size ?? 0).toString()} />
                   </div>
                   <ActivityDialog profile={p} />

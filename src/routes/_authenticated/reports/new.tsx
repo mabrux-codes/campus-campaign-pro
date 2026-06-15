@@ -42,7 +42,6 @@ const FIELDS: Record<string, Field[]> = {
     { key: "roi", label: "ROI (%)", type: "number" },
   ],
   influencer: [
-    { key: "influencer", label: "Influencer name", required: true },
     { key: "platform", label: "Platform", required: true },
     { key: "content_type", label: "Content type" },
     { key: "views", label: "Views", type: "number", required: true, min: 0 },
@@ -52,6 +51,15 @@ const FIELDS: Record<string, Field[]> = {
     { key: "saves", label: "Saves", type: "number", min: 0 },
     { key: "shares", label: "Shares", type: "number", min: 0 },
     { key: "comments", label: "Comments", type: "number", min: 0 },
+  ],
+  influencer_ig_stories: [
+    { key: "impressions", label: "Story impressions", type: "number", required: true, min: 0 },
+    { key: "reach", label: "Reach", type: "number", min: 0 },
+    { key: "replies", label: "Replies", type: "number", required: true, min: 0 },
+    { key: "link_clicks", label: "Link / swipe-up clicks", type: "number", min: 0 },
+    { key: "sticker_taps", label: "Sticker taps", type: "number", min: 0 },
+    { key: "exits", label: "Exits", type: "number", min: 0 },
+    { key: "forward_taps", label: "Forward taps", type: "number", min: 0 },
   ],
   organic: [
     { key: "platform", label: "Platform", required: true },
@@ -82,6 +90,8 @@ function NewReport() {
   const [step, setStep] = useState(0);
   const [campaignId, setCampaignId] = useState(preselected ?? "");
   const [type, setType] = useState<"paid" | "influencer" | "organic">("paid");
+  const [isStories, setIsStories] = useState(false);
+  const [influencerProfileId, setInfluencerProfileId] = useState<string>("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
@@ -91,14 +101,29 @@ function NewReport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaigns")
-        .select("id,name,university_name,end_date,status")
+        .select("id,name,university_name,end_date,status,workspace_id")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  const fields = FIELDS[type];
+  const selectedCampaignForWs = campaigns.find((c) => c.id === campaignId);
+  const { data: workspaceProfiles = [] } = useQuery({
+    queryKey: ["influencer-profiles-for-report", selectedCampaignForWs?.workspace_id],
+    enabled: !!selectedCampaignForWs?.workspace_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("influencer_profiles")
+        .select("id,name")
+        .eq("workspace_id", selectedCampaignForWs!.workspace_id!)
+        .order("name");
+      return data ?? [];
+    },
+  });
+
+  const fieldsKey = type === "influencer" && isStories ? "influencer_ig_stories" : type;
+  const fields = FIELDS[fieldsKey];
   const errors = useMemo(() => {
     const out: Record<string, string> = {};
     for (const f of fields) {
@@ -112,7 +137,11 @@ function NewReport() {
 
   const stepValid = (i: number) => {
     if (i === 0) return !!campaignId;
-    if (i === 1) return !!type;
+    if (i === 1) {
+      if (!type) return false;
+      if (type === "influencer" && !influencerProfileId) return false;
+      return true;
+    }
     if (i === 2) return Object.keys(errors).length === 0;
     return true;
   };
@@ -121,6 +150,7 @@ function NewReport() {
 
   const submit = async () => {
     if (!user || !campaignId) return toast.error("Missing campaign");
+    if (type === "influencer" && !influencerProfileId) return toast.error("Pick an influencer");
     if (Object.keys(errors).length) {
       const all: Record<string, boolean> = {};
       fields.forEach((f) => (all[f.key] = true));
@@ -134,6 +164,13 @@ function NewReport() {
       const v = values[f.key];
       if (v === undefined || v === "") continue;
       data[f.key] = f.type === "number" ? Number(v) : v;
+    }
+    if (type === "influencer") {
+      data.influencer_profile_id = influencerProfileId;
+      if (isStories) {
+        data.platform = "Instagram";
+        data.format = "stories";
+      }
     }
     const { error } = await supabase.from("reports").insert({
       campaign_id: campaignId,
@@ -221,17 +258,41 @@ function NewReport() {
           )}
 
           {step === 1 && (
-            <div className="space-y-2">
-              <Label>Report type</Label>
-              <Select value={type} onValueChange={(v) => { setType(v as typeof type); setValues({}); setTouched({}); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">Paid ads</SelectItem>
-                  <SelectItem value="influencer">Influencer</SelectItem>
-                  <SelectItem value="organic">Organic</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Determines which metrics you'll fill in next.</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Report type</Label>
+                <Select value={type} onValueChange={(v) => { setType(v as typeof type); setValues({}); setTouched({}); setIsStories(false); setInfluencerProfileId(""); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paid">Paid ads</SelectItem>
+                    <SelectItem value="influencer">Influencer</SelectItem>
+                    <SelectItem value="organic">Organic</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Determines which metrics you'll fill in next.</p>
+              </div>
+              {type === "influencer" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Influencer <span className="text-destructive">*</span></Label>
+                    <Select value={influencerProfileId} onValueChange={setInfluencerProfileId}>
+                      <SelectTrigger><SelectValue placeholder="Pick an influencer" /></SelectTrigger>
+                      <SelectContent>
+                        {workspaceProfiles.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {workspaceProfiles.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No influencers in this workspace yet.</p>
+                    )}
+                  </div>
+                  <label className="flex items-center gap-2 rounded-md border border-border p-3 text-sm">
+                    <input type="checkbox" checked={isStories} onChange={(e) => { setIsStories(e.target.checked); setValues({}); setTouched({}); }} />
+                    <span>Instagram Stories — capture story-specific metrics for engagement averaging</span>
+                  </label>
+                </>
+              )}
             </div>
           )}
 

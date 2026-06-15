@@ -2,24 +2,42 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/lib/theme";
 import { CURRENCIES, useCurrency, formatMoney } from "@/lib/currency";
 import { useWorkspace } from "@/lib/workspace";
 import { useAuth } from "@/lib/auth";
+import { useSecurityAlerts } from "@/lib/security-alerts";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
-import { Moon, Sun, Building2, User, CreditCard, ShieldCheck, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Moon, Sun, Building2, User, CreditCard, ShieldCheck, LogOut, ShieldAlert, Check, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
+
+type IdentityProvider = "google" | "apple";
 
 function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
   const { current, workspaces } = useWorkspace();
   const { user, signOut } = useAuth();
+  const { findings, isAdmin, acknowledge, resolve } = useSecurityAlerts();
+  const [identities, setIdentities] = useState<string[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      const ids = (data.user?.identities ?? []).map((i) => i.provider);
+      setIdentities(ids);
+    });
+    return () => { active = false; };
+  }, [user?.id]);
 
   const sendReset = async () => {
     if (!user?.email) return;
@@ -30,12 +48,94 @@ function SettingsPage() {
     else toast.success("Password reset email sent");
   };
 
+  const linkProvider = async (provider: IdentityProvider) => {
+    if (provider === "apple") {
+      toast.info("Apple sign-in is not configured yet.");
+      return;
+    }
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/settings",
+    });
+    if (result.error) toast.error((result.error as any).message ?? "Could not start Google sign-in");
+  };
+
+  const openFindings = findings.filter((f) => f.status === "open");
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="font-display text-4xl">Settings</h1>
-        <p className="text-sm text-muted-foreground">Workspace, appearance, currency, and account.</p>
+        <p className="text-sm text-muted-foreground">Workspace, appearance, currency, security, and account.</p>
       </div>
+
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base font-medium">
+              <ShieldAlert className="h-4 w-4 text-destructive" /> Security findings
+              {openFindings.length > 0 && (
+                <Badge variant="destructive" className="ml-2">{openFindings.length} open</Badge>
+              )}
+            </CardTitle>
+            <CardDescription>Live alerts from connector and workspace scans. Visible to admins only.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {findings.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No findings yet. You'll be notified live when one appears.</p>
+            ) : (
+              <ul className="space-y-2">
+                {findings.slice(0, 12).map((f) => {
+                  const acked = (f.acknowledged_by ?? []).includes(user?.id ?? "");
+                  return (
+                    <li key={f.id} className="flex items-start gap-3 rounded-md border border-border p-3 text-sm">
+                      <div className="mt-0.5">
+                        <SeverityBadge severity={f.severity} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium">{f.title}</p>
+                          <Badge variant="outline" className="text-[10px] uppercase">{f.source}</Badge>
+                          <Badge variant="outline" className="text-[10px] uppercase">{f.status}</Badge>
+                          {acked && <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"><Check className="h-3 w-3" /> Acknowledged</span>}
+                        </div>
+                        {f.description && <p className="mt-1 text-xs text-muted-foreground">{f.description}</p>}
+                        <div className="mt-2 flex gap-2">
+                          {!acked && f.status === "open" && (
+                            <Button size="sm" variant="outline" onClick={() => acknowledge(f.id)}>Acknowledge</Button>
+                          )}
+                          {f.status === "open" && (
+                            <Button size="sm" variant="ghost" onClick={() => resolve(f.id)}>Mark resolved</Button>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-medium"><Link2 className="h-4 w-4" /> Connected accounts</CardTitle>
+          <CardDescription>Link your social accounts for faster sign-in.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ProviderRow
+            name="Google"
+            connected={identities.includes("google")}
+            onLink={() => linkProvider("google")}
+          />
+          <ProviderRow
+            name="Apple"
+            connected={identities.includes("apple")}
+            onLink={() => linkProvider("apple")}
+            note="Not configured"
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -108,4 +208,30 @@ function SettingsPage() {
       </Card>
     </div>
   );
+}
+
+function ProviderRow({ name, connected, onLink, note }: { name: string; connected: boolean; onLink: () => void; note?: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border border-border p-3">
+      <div>
+        <p className="text-sm font-medium">{name}</p>
+        {note && !connected && <p className="text-xs text-muted-foreground">{note}</p>}
+      </div>
+      {connected ? (
+        <Badge variant="outline" className="gap-1"><Check className="h-3 w-3" /> Connected</Badge>
+      ) : (
+        <Button size="sm" variant="outline" onClick={onLink} disabled={!!note}>Connect</Button>
+      )}
+    </div>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: string }) {
+  const map: Record<string, string> = {
+    low: "bg-muted text-muted-foreground",
+    medium: "bg-warning/20 text-warning-foreground border border-warning/40",
+    high: "bg-destructive/20 text-destructive border border-destructive/40",
+    critical: "bg-destructive text-destructive-foreground",
+  };
+  return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase ${map[severity] ?? map.low}`}>{severity}</span>;
 }

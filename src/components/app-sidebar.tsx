@@ -19,6 +19,7 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
+import { useSecurityAlerts } from "@/lib/security-alerts";
 import { usePendingReports } from "@/lib/pending-reports";
 
 const items = [
@@ -68,6 +69,7 @@ export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
+  const { unackHighCount } = useSecurityAlerts();
   const { data: pendingReports = [] } = usePendingReports();
   const pendingCount = pendingReports.length;
 
@@ -87,7 +89,12 @@ export function AppSidebar() {
                 let badgeCount = 0;
                 if (it.url === "/notifications") badgeCount = unreadCount;
                 else if (it.url === "/reports") badgeCount = pendingCount;
+                else if (it.url === "/settings") badgeCount = unackHighCount;
                 const showBadge = badgeCount > 0;
+                const badgeColor =
+                  it.url === "/reports" ? "bg-warning text-warning-foreground"
+                  : it.url === "/settings" ? "bg-destructive text-destructive-foreground"
+                  : "bg-primary text-primary-foreground";
                 return (
                   <SidebarMenuItem key={it.url}>
                     <SidebarMenuButton asChild isActive={active}>
@@ -95,7 +102,7 @@ export function AppSidebar() {
                         <it.icon className="h-4 w-4" />
                         {!collapsed && <span className="flex-1">{it.title}</span>}
                         {showBadge && (
-                          <span className={`inline-flex items-center justify-center rounded-full ${it.url === "/reports" ? "bg-warning text-warning-foreground" : "bg-primary text-primary-foreground"} px-1.5 text-[10px] font-semibold ${collapsed ? "absolute right-1 top-1 h-4 min-w-4" : "h-5 min-w-5"}`}>
+                          <span className={`inline-flex items-center justify-center rounded-full ${badgeColor} px-1.5 text-[10px] font-semibold ${collapsed ? "absolute right-1 top-1 h-4 min-w-4" : "h-5 min-w-5"}`}>
                             {badgeCount > 99 ? "99+" : badgeCount}
                           </span>
                         )}
