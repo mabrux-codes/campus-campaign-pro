@@ -124,8 +124,8 @@ export function SecurityAlertsProvider({ children }: { children: ReactNode }) {
       .from("security_findings" as any)
       .update({ acknowledged_by: next as any })
       .eq("id", id);
-    if (error) return toast.error(error.message);
-    refresh();
+    if (error) { toast.error(error.message); return; }
+    await refresh();
   };
 
   const resolve = async (id: string) => {
@@ -133,9 +133,9 @@ export function SecurityAlertsProvider({ children }: { children: ReactNode }) {
       .from("security_findings" as any)
       .update({ status: "resolved" as any })
       .eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Marked resolved");
-    refresh();
+    await refresh();
   };
 
   return (
