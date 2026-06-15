@@ -69,6 +69,7 @@ export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
+  const { unackHighCount } = useSecurityAlerts();
   const { data: pendingReports = [] } = usePendingReports();
   const pendingCount = pendingReports.length;
 
