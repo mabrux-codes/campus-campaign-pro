@@ -25,7 +25,10 @@ Deno.serve(async (req) => {
       .select("id,type,data,ai_summary,campaign:campaigns(name,university_name,objectives,type,paid_budget)")
       .eq("id", reportId)
       .single();
-    if (error || !report) return json({ error: error?.message ?? "not found" }, 404);
+    if (error || !report) {
+      if (error) console.error("[ai-report-summary] report lookup", error);
+      return json({ error: "Report not found" }, 404);
+    }
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return json({ error: "AI not configured" }, 500);
@@ -62,14 +65,18 @@ Context (do not echo back):
     });
     if (aiRes.status === 429) return json({ error: "Rate limit hit, try again shortly." }, 429);
     if (aiRes.status === 402) return json({ error: "AI credits exhausted." }, 402);
-    if (!aiRes.ok) return json({ error: "AI gateway error: " + (await aiRes.text()) }, 500);
+    if (!aiRes.ok) {
+      console.error("[ai-report-summary] gateway error", aiRes.status, await aiRes.text());
+      return json({ error: "AI service unavailable" }, 500);
+    }
     const aiJson = await aiRes.json();
     const summary: string = aiJson.choices?.[0]?.message?.content ?? "";
 
     await supa.from("reports").update({ ai_summary: summary }).eq("id", reportId);
     return json({ summary });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : "unknown" }, 500);
+    console.error("[ai-report-summary]", e);
+    return json({ error: "Internal error" }, 500);
   }
 });
 
