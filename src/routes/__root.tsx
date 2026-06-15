@@ -118,8 +118,10 @@ function RootComponent() {
           <WorkspaceProvider>
             <CurrencyProvider>
               <NotificationsProvider>
-                <Outlet />
-                <Toaster richColors position="top-right" />
+                <SecurityAlertsProvider>
+                  <Outlet />
+                  <Toaster richColors position="top-right" />
+                </SecurityAlertsProvider>
               </NotificationsProvider>
             </CurrencyProvider>
           </WorkspaceProvider>
