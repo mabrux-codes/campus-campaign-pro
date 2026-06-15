@@ -253,7 +253,7 @@ function InfluencersPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
                     <Mini label="Followers" value={totalFollowers(p).toLocaleString()} />
-                    <Mini label="Avg Eng." value={avgEng != null ? `${avgEng.toFixed(1)}%` : "—"} />
+                    <Mini label="Avg Eng." value={avgEng != null ? avgLabel : "—"} />
                     <Mini label="Campaigns" value={(agg?.campaigns.size ?? 0).toString()} />
                   </div>
                   <ActivityDialog profile={p} />
