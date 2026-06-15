@@ -69,11 +69,19 @@ function InfluencersPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("influencers")
-        .select("profile_id,engagement_rate,campaign_id")
+        .select("profile_id,engagement_rate,campaign_id,campaigns:campaign_id(id,status)")
         .in("profile_id", profileIds);
       return data ?? [];
     },
   });
+
+  const activeProfileIds = useMemo(() => {
+    const s = new Set<string>();
+    campaignRows.forEach((r: any) => {
+      if (r.profile_id && r.campaigns?.status === "active") s.add(r.profile_id);
+    });
+    return s;
+  }, [campaignRows]);
 
   const aggByProfile = useMemo(() => {
     const m: Record<string, { engs: number[]; campaigns: Set<string> }> = {};
@@ -86,13 +94,20 @@ function InfluencersPage() {
     return m;
   }, [campaignRows]);
 
+  const [tab, setTab] = useState<"available" | "active">("available");
+
+  const visibleProfiles = useMemo(
+    () => profiles.filter((p) => tab === "active" ? activeProfileIds.has(p.id) : !activeProfileIds.has(p.id)),
+    [profiles, activeProfileIds, tab],
+  );
+
   const filtered = useMemo(
-    () => profiles.filter((p) => {
+    () => visibleProfiles.filter((p) => {
       if (!q) return true;
       const platformsText = normalizePlatforms(p).map((e) => `${e.platform} ${e.handle}`).join(" ");
       return `${p.name} ${platformsText}`.toLowerCase().includes(q.toLowerCase());
     }),
-    [profiles, q],
+    [visibleProfiles, q],
   );
 
   const totals = {
