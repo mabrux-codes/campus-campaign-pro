@@ -19,6 +19,7 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications";
+import { useSecurityAlerts } from "@/lib/security-alerts";
 import { usePendingReports } from "@/lib/pending-reports";
 
 const items = [
