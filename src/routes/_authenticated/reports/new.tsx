@@ -42,7 +42,6 @@ const FIELDS: Record<string, Field[]> = {
     { key: "roi", label: "ROI (%)", type: "number" },
   ],
   influencer: [
-    { key: "influencer", label: "Influencer name", required: true },
     { key: "platform", label: "Platform", required: true },
     { key: "content_type", label: "Content type" },
     { key: "views", label: "Views", type: "number", required: true, min: 0 },
@@ -52,6 +51,15 @@ const FIELDS: Record<string, Field[]> = {
     { key: "saves", label: "Saves", type: "number", min: 0 },
     { key: "shares", label: "Shares", type: "number", min: 0 },
     { key: "comments", label: "Comments", type: "number", min: 0 },
+  ],
+  influencer_ig_stories: [
+    { key: "impressions", label: "Story impressions", type: "number", required: true, min: 0 },
+    { key: "reach", label: "Reach", type: "number", min: 0 },
+    { key: "replies", label: "Replies", type: "number", required: true, min: 0 },
+    { key: "link_clicks", label: "Link / swipe-up clicks", type: "number", min: 0 },
+    { key: "sticker_taps", label: "Sticker taps", type: "number", min: 0 },
+    { key: "exits", label: "Exits", type: "number", min: 0 },
+    { key: "forward_taps", label: "Forward taps", type: "number", min: 0 },
   ],
   organic: [
     { key: "platform", label: "Platform", required: true },
