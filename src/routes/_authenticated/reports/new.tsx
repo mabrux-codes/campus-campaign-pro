@@ -137,7 +137,11 @@ function NewReport() {
 
   const stepValid = (i: number) => {
     if (i === 0) return !!campaignId;
-    if (i === 1) return !!type;
+    if (i === 1) {
+      if (!type) return false;
+      if (type === "influencer" && !influencerProfileId) return false;
+      return true;
+    }
     if (i === 2) return Object.keys(errors).length === 0;
     return true;
   };
@@ -146,6 +150,7 @@ function NewReport() {
 
   const submit = async () => {
     if (!user || !campaignId) return toast.error("Missing campaign");
+    if (type === "influencer" && !influencerProfileId) return toast.error("Pick an influencer");
     if (Object.keys(errors).length) {
       const all: Record<string, boolean> = {};
       fields.forEach((f) => (all[f.key] = true));
@@ -159,6 +164,13 @@ function NewReport() {
       const v = values[f.key];
       if (v === undefined || v === "") continue;
       data[f.key] = f.type === "number" ? Number(v) : v;
+    }
+    if (type === "influencer") {
+      data.influencer_profile_id = influencerProfileId;
+      if (isStories) {
+        data.platform = "Instagram";
+        data.format = "stories";
+      }
     }
     const { error } = await supabase.from("reports").insert({
       campaign_id: campaignId,
