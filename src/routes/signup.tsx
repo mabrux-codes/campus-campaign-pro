@@ -63,6 +63,16 @@ function SignupPage() {
         <h1 className="font-display text-3xl">Create your workspace</h1>
         <p className="text-sm text-muted-foreground">Free to start. Verify your email to begin.</p>
       </div>
+      <Button type="button" variant="outline" className="w-full" onClick={async () => {
+        const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/dashboard" });
+        if (result.error) toast.error((result.error as any).message ?? "Google sign-in failed");
+      }}>
+        <GoogleIcon className="mr-2 h-4 w-4" /> Continue with Google
+      </Button>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+        <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted-foreground">or</span></div>
+      </div>
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Full name</Label>
