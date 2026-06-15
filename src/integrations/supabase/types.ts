@@ -14,6 +14,52 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_influencers: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          influencer_profile_id: string
+          workspace_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          influencer_profile_id: string
+          workspace_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          influencer_profile_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_influencers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_influencers_influencer_profile_id_fkey"
+            columns: ["influencer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_influencers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           client_country: string | null
@@ -378,6 +424,53 @@ export type Database = {
           },
         ]
       }
+      security_findings: {
+        Row: {
+          acknowledged_by: string[]
+          created_at: string
+          description: string | null
+          id: string
+          severity: Database["public"]["Enums"]["security_severity"]
+          source: string
+          status: Database["public"]["Enums"]["security_finding_status"]
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          acknowledged_by?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          severity?: Database["public"]["Enums"]["security_severity"]
+          source?: string
+          status?: Database["public"]["Enums"]["security_finding_status"]
+          title: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          acknowledged_by?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          severity?: Database["public"]["Enums"]["security_severity"]
+          source?: string
+          status?: Database["public"]["Enums"]["security_finding_status"]
+          title?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_findings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -561,6 +654,8 @@ export type Database = {
       campaign_status: "draft" | "active" | "completed" | "paused" | "cancelled"
       campaign_type: "paid" | "organic"
       report_type: "paid" | "influencer" | "organic"
+      security_finding_status: "open" | "resolved" | "ignored"
+      security_severity: "low" | "medium" | "high" | "critical"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -693,6 +788,8 @@ export const Constants = {
       campaign_status: ["draft", "active", "completed", "paused", "cancelled"],
       campaign_type: ["paid", "organic"],
       report_type: ["paid", "influencer", "organic"],
+      security_finding_status: ["open", "resolved", "ignored"],
+      security_severity: ["low", "medium", "high", "critical"],
       workspace_role: ["owner", "admin", "editor", "viewer"],
     },
   },
