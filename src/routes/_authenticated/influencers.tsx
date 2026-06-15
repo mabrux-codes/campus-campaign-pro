@@ -181,9 +181,25 @@ function InfluencersPage() {
         <Stat label="Active in campaigns" value={totals.activeCount.toString()} />
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, handle, platform" className="pl-9" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+          <button
+            onClick={() => setTab("available")}
+            className={`rounded-sm px-3 py-1 ${tab === "available" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+          >
+            Available ({profiles.length - activeProfileIds.size})
+          </button>
+          <button
+            onClick={() => setTab("active")}
+            className={`rounded-sm px-3 py-1 ${tab === "active" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+          >
+            In active campaigns ({activeProfileIds.size})
+          </button>
+        </div>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, handle, platform" className="pl-9" />
+        </div>
       </div>
 
       {isLoading ? (
@@ -191,7 +207,11 @@ function InfluencersPage() {
       ) : filtered.length === 0 ? (
         <div className="surface-card flex flex-col items-center gap-2 p-12 text-center">
           <Users className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{profiles.length === 0 ? "No influencers yet — add your first one." : "No matches."}</p>
+          <p className="text-sm text-muted-foreground">
+            {profiles.length === 0
+              ? "No influencers yet — add your first one."
+              : tab === "active" ? "Nobody is on an active campaign right now." : "No matches."}
+          </p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
