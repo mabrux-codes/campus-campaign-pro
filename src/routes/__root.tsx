@@ -14,6 +14,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { WorkspaceProvider } from "@/lib/workspace";
 import { CurrencyProvider } from "@/lib/currency";
 import { NotificationsProvider } from "@/lib/notifications";
+import { SecurityAlertsProvider } from "@/lib/security-alerts";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
