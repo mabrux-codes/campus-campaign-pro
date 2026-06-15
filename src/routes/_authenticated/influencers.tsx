@@ -110,14 +110,50 @@ function InfluencersPage() {
     [visibleProfiles, q],
   );
 
+  // IG stories engagement per influencer from reports
+  const { data: storyReports = [] } = useQuery({
+    queryKey: ["story-reports", current?.id],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("reports")
+        .select("data,campaign_id,campaigns:campaign_id!inner(workspace_id)")
+        .eq("type", "influencer")
+        .eq("campaigns.workspace_id", current!.id);
+      return (data ?? []) as any[];
+    },
+  });
+
+  const storyEngByProfile = useMemo(() => {
+    const m: Record<string, number[]> = {};
+    storyReports.forEach((r: any) => {
+      const d = r.data ?? {};
+      if (String(d.platform).toLowerCase() !== "instagram") return;
+      if (String(d.format).toLowerCase() !== "stories") return;
+      const impressions = Number(d.impressions);
+      if (!Number.isFinite(impressions) || impressions <= 0) return;
+      const replies = Number(d.replies) || 0;
+      const linkClicks = Number(d.link_clicks) || 0;
+      const stickerTaps = Number(d.sticker_taps) || 0;
+      const rate = ((replies + linkClicks + stickerTaps) / impressions) * 100;
+      const pid = d.influencer_profile_id;
+      if (!pid) return;
+      (m[pid] ||= []).push(rate);
+    });
+    return m;
+  }, [storyReports]);
+
+  const allStoryRates = Object.values(storyEngByProfile).flat();
   const totals = {
     total: profiles.length,
     followers: profiles.reduce((a, p) => a + totalFollowers(p), 0),
-    avgEng: (() => {
-      const allEngs = Object.values(aggByProfile).flatMap((a) => a.engs);
-      return allEngs.length ? allEngs.reduce((s, n) => s + n, 0) / allEngs.length : 0;
-    })(),
-    activeCount: Object.values(aggByProfile).filter((a) => a.campaigns.size > 0).length,
+    avgEng: allStoryRates.length
+      ? allStoryRates.reduce((s, n) => s + n, 0) / allStoryRates.length
+      : (() => {
+          const all = Object.values(aggByProfile).flatMap((a) => a.engs);
+          return all.length ? all.reduce((s, n) => s + n, 0) / all.length : 0;
+        })(),
+    activeCount: activeProfileIds.size,
   };
 
   const remove = async (id: string) => {
