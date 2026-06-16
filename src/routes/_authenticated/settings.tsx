@@ -49,17 +49,15 @@ function SettingsPage() {
   };
 
   const linkProvider = async (provider: IdentityProvider) => {
-    if (provider === "apple") {
-      toast.info("Apple sign-in is not configured yet.");
-      return;
-    }
-    const result = await lovable.auth.signInWithOAuth("google", {
+    const result = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: window.location.origin + "/settings",
     });
-    if (result.error) toast.error((result.error as any).message ?? "Could not start Google sign-in");
+    if (result.error) toast.error((result.error as any).message ?? `Could not start ${provider} sign-in`);
   };
 
+  const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "medium" | "high" | "critical">("all");
   const openFindings = findings.filter((f) => f.status === "open");
+  const visibleFindings = severityFilter === "all" ? findings : findings.filter((f) => f.severity === severityFilter);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
