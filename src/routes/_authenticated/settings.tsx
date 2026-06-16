@@ -77,12 +77,25 @@ function SettingsPage() {
             </CardTitle>
             <CardDescription>Live alerts from connector and workspace scans. Visible to admins only.</CardDescription>
           </CardHeader>
-          <CardContent>
-            {findings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No findings yet. You'll be notified live when one appears.</p>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Severity</Label>
+              <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v as any)}>
+                <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {visibleFindings.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{findings.length === 0 ? "No findings yet. You'll be notified live when one appears." : "No findings match this severity."}</p>
             ) : (
               <ul className="space-y-2">
-                {findings.slice(0, 12).map((f) => {
+                {visibleFindings.slice(0, 12).map((f) => {
                   const acked = (f.acknowledged_by ?? []).includes(user?.id ?? "");
                   return (
                     <li key={f.id} className="flex items-start gap-3 rounded-md border border-border p-3 text-sm">
