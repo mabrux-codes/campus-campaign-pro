@@ -99,6 +99,14 @@ export function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+export function AppleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M16.365 1.43c0 1.14-.43 2.23-1.18 3.03-.79.86-2.09 1.52-3.16 1.43-.13-1.1.41-2.24 1.13-2.97.8-.83 2.18-1.45 3.21-1.49zM20.5 17.27c-.55 1.27-.82 1.84-1.53 2.97-.99 1.58-2.39 3.55-4.12 3.56-1.54.02-1.94-.99-4.03-.97-2.09.01-2.52 1-4.06.97-1.73-.03-3.06-1.8-4.05-3.38C.04 16.06-.27 10.7 1.5 8.06c1.26-1.86 3.24-2.95 5.09-2.95 1.89 0 3.07 1.03 4.63 1.03 1.51 0 2.43-1.04 4.61-1.04 1.65 0 3.39.9 4.64 2.45-4.08 2.24-3.42 8.07.03 9.72z"/>
+    </svg>
+  );
+}
+
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-background">
