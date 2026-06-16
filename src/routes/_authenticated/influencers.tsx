@@ -273,7 +273,19 @@ function InfluencersPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
                     <Mini label="Followers" value={totalFollowers(p).toLocaleString()} />
-                    <Mini label="Avg Eng." value={avgEng != null ? avgLabel : "—"} />
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div><Mini label="Avg Eng." value={avgEng != null ? avgLabel : "—"} /></div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-xs">
+                          <p className="font-medium">Instagram Stories engagement</p>
+                          <p className="mt-1 font-mono text-[11px]">avg( (replies + link_clicks + sticker_taps) / impressions ) × 100</p>
+                          <p className="mt-1 text-muted-foreground">Reports with 0 impressions are skipped. Falls back to per-campaign engagement when no story reports exist.</p>
+                          {storyRates.length > 0 && <p className="mt-1 text-muted-foreground">Based on {storyRates.length} story report{storyRates.length === 1 ? "" : "s"}.</p>}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Mini label="Campaigns" value={(agg?.campaigns.size ?? 0).toString()} />
                   </div>
                   <ActivityDialog profile={p} />
