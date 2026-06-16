@@ -84,6 +84,25 @@ function InfluencersPage() {
     return s;
   }, [campaignRows]);
 
+  // Auto re-list / unlist as campaigns flip status (active <-> completed)
+  useEffect(() => {
+    if (!current?.id) return;
+    const ch = supabase
+      .channel("campaign-status:" + current.id)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "campaigns", filter: `workspace_id=eq.${current.id}` }, (payload) => {
+        const oldStatus = (payload.old as any)?.status;
+        const newStatus = (payload.new as any)?.status;
+        if (oldStatus !== newStatus) {
+          qc.invalidateQueries({ queryKey: ["influencer-campaign-rows"] });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "campaign_influencers", filter: `workspace_id=eq.${current.id}` }, () => {
+        qc.invalidateQueries({ queryKey: ["influencer-campaign-rows"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [current?.id, qc]);
+
   const aggByProfile = useMemo(() => {
     const m: Record<string, { engs: number[]; campaigns: Set<string> }> = {};
     campaignRows.forEach((r: any) => {
