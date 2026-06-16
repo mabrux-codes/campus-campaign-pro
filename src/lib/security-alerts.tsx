@@ -120,12 +120,17 @@ export function SecurityAlertsProvider({ children }: { children: ReactNode }) {
     const target = findings.find((f) => f.id === id);
     if (!target) return;
     const next = Array.from(new Set([...(target.acknowledged_by ?? []), user.id]));
+    // Optimistic update so the unread badge clears immediately
+    setFindings((list) => list.map((f) => (f.id === id ? { ...f, acknowledged_by: next } : f)));
     const { error } = await supabase
       .from("security_findings" as any)
       .update({ acknowledged_by: next as any })
       .eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    await refresh();
+    if (error) {
+      toast.error(error.message);
+      await refresh(); // revert on failure
+      return;
+    }
   };
 
   const resolve = async (id: string) => {

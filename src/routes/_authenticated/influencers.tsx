@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useWorkspace } from "@/lib/workspace";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Plus, Users, Trash2, Sparkles, Pencil, Upload, Activity as ActivityIcon, X } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SOCIAL_PLATFORMS, handlePlaceholder } from "@/lib/social-platforms";
 import { toast } from "sonner";
 
@@ -82,6 +83,25 @@ function InfluencersPage() {
     });
     return s;
   }, [campaignRows]);
+
+  // Auto re-list / unlist as campaigns flip status (active <-> completed)
+  useEffect(() => {
+    if (!current?.id) return;
+    const ch = supabase
+      .channel("campaign-status:" + current.id)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "campaigns", filter: `workspace_id=eq.${current.id}` }, (payload) => {
+        const oldStatus = (payload.old as any)?.status;
+        const newStatus = (payload.new as any)?.status;
+        if (oldStatus !== newStatus) {
+          qc.invalidateQueries({ queryKey: ["influencer-campaign-rows"] });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "campaign_influencers", filter: `workspace_id=eq.${current.id}` }, () => {
+        qc.invalidateQueries({ queryKey: ["influencer-campaign-rows"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [current?.id, qc]);
 
   const aggByProfile = useMemo(() => {
     const m: Record<string, { engs: number[]; campaigns: Set<string> }> = {};
@@ -253,7 +273,19 @@ function InfluencersPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
                     <Mini label="Followers" value={totalFollowers(p).toLocaleString()} />
-                    <Mini label="Avg Eng." value={avgEng != null ? avgLabel : "—"} />
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div><Mini label="Avg Eng." value={avgEng != null ? avgLabel : "—"} /></div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-xs">
+                          <p className="font-medium">Instagram Stories engagement</p>
+                          <p className="mt-1 font-mono text-[11px]">avg( (replies + link_clicks + sticker_taps) / impressions ) × 100</p>
+                          <p className="mt-1 text-muted-foreground">Reports with 0 impressions are skipped. Falls back to per-campaign engagement when no story reports exist.</p>
+                          {storyRates.length > 0 && <p className="mt-1 text-muted-foreground">Based on {storyRates.length} story report{storyRates.length === 1 ? "" : "s"}.</p>}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Mini label="Campaigns" value={(agg?.campaigns.size ?? 0).toString()} />
                   </div>
                   <ActivityDialog profile={p} />
