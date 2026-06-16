@@ -143,7 +143,6 @@ function SettingsPage() {
             name="Apple"
             connected={identities.includes("apple")}
             onLink={() => linkProvider("apple")}
-            note="Not configured"
           />
         </CardContent>
       </Card>
