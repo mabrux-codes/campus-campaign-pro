@@ -37,11 +37,11 @@ function LoginPage() {
     navigate({ to: "/dashboard" });
   };
 
-  const signInGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
+  const signInOAuth = async (provider: "google" | "apple") => {
+    const result = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: window.location.origin + "/dashboard",
     });
-    if (result.error) toast.error((result.error as any).message ?? "Google sign-in failed");
+    if (result.error) toast.error((result.error as any).message ?? `${provider} sign-in failed`);
   };
 
   return (
@@ -50,9 +50,14 @@ function LoginPage() {
         <h1 className="font-display text-3xl">Welcome back</h1>
         <p className="text-sm text-muted-foreground">Sign in to continue to your workspace.</p>
       </div>
-      <Button type="button" variant="outline" className="w-full" onClick={signInGoogle}>
-        <GoogleIcon className="mr-2 h-4 w-4" /> Continue with Google
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" onClick={() => signInOAuth("google")}>
+          <GoogleIcon className="mr-2 h-4 w-4" /> Google
+        </Button>
+        <Button type="button" variant="outline" onClick={() => signInOAuth("apple")}>
+          <AppleIcon className="mr-2 h-4 w-4" /> Apple
+        </Button>
+      </div>
       <div className="relative">
         <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
         <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted-foreground">or</span></div>
