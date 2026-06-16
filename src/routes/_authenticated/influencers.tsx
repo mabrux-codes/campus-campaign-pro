@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Plus, Users, Trash2, Sparkles, Pencil, Upload, Activity as ActivityIcon, X } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SOCIAL_PLATFORMS, handlePlaceholder } from "@/lib/social-platforms";
 import { toast } from "sonner";
 
