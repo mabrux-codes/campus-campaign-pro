@@ -297,7 +297,7 @@ function BudgetSection({ amount, onAmount, currency, setCurrency, symbol }: {
 
   return (
     <div className="space-y-2">
-      <Label>Total ads budget</Label>
+      <Label>Marketing amount needed</Label>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{symbol.trim() || currency}</span>
