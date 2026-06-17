@@ -47,11 +47,13 @@ export function useCurrency() {
   return c;
 }
 
-export function formatMoney(amount: number | null | undefined, currency: Currency = "USD") {
+export function formatMoney(amount: number | null | undefined, currency: Currency = "KES") {
   if (amount === null || amount === undefined) return "—";
+  const rounded = Math.round(Number(amount)).toLocaleString();
+  if (currency === "KES") return `KSh ${rounded}`;
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
   } catch {
-    return `${SYMBOLS[currency]}${Number(amount).toLocaleString()}`;
+    return `${SYMBOLS[currency]}${rounded}`;
   }
 }
