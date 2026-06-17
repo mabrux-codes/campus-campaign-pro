@@ -251,7 +251,7 @@ function InfluencersPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-2"}>
           {filtered.map((p) => {
             const agg = aggByProfile[p.id];
             const storyRates = storyEngByProfile[p.id] ?? [];
