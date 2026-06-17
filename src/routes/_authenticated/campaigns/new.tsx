@@ -212,35 +212,38 @@ function NewCampaign() {
               ))}
             </div>
 
-            {form.type === "paid" && (
-              <div className="space-y-4 border-t border-border pt-4">
-                <BudgetSection
-                  amount={form.paid_budget}
-                  onAmount={(v) => upd("paid_budget", v)}
-                  currency={currency}
-                  setCurrency={setCurrency}
-                  symbol={symbol}
-                />
-                <div className="space-y-2">
-                  <Label>Platforms</Label>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {AD_PLATFORMS.map((p) => (
-                      <label key={p} className="flex items-center gap-2 rounded-md border border-border p-2.5 text-sm">
-                        <Checkbox checked={form.platforms.includes(p)} onCheckedChange={() => togglePlatform(p)} />
-                        {p}
-                      </label>
-                    ))}
+            <div className="space-y-4 border-t border-border pt-4">
+              <BudgetSection
+                amount={form.paid_budget}
+                onAmount={(v) => upd("paid_budget", v)}
+                currency={currency}
+                setCurrency={setCurrency}
+                symbol={symbol}
+              />
+
+              {form.type === "paid" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Platforms</Label>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {AD_PLATFORMS.map((p) => (
+                        <label key={p} className="flex items-center gap-2 rounded-md border border-border p-2.5 text-sm">
+                          <Checkbox checked={form.platforms.includes(p)} onCheckedChange={() => togglePlatform(p)} />
+                          {p}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between rounded-md border border-border p-3">
-                  <div>
-                    <p className="text-sm font-medium">Use influencers?</p>
-                    <p className="text-xs text-muted-foreground">Add creators in the next step.</p>
+                  <div className="flex items-center justify-between rounded-md border border-border p-3">
+                    <div>
+                      <p className="text-sm font-medium">Use influencers?</p>
+                      <p className="text-xs text-muted-foreground">Add creators in the next step.</p>
+                    </div>
+                    <Switch checked={form.uses_influencers} onCheckedChange={(v) => upd("uses_influencers", v)} />
                   </div>
-                  <Switch checked={form.uses_influencers} onCheckedChange={(v) => upd("uses_influencers", v)} />
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
