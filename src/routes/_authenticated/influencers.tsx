@@ -201,7 +201,7 @@ function InfluencersPage() {
         <Stat label="Active in campaigns" value={totals.activeCount.toString()} />
       </div>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
           <button
             onClick={() => setTab("available")}
@@ -216,9 +216,25 @@ function InfluencersPage() {
             In active campaigns ({activeProfileIds.size})
           </button>
         </div>
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-md min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, handle, platform" className="pl-9" />
+        </div>
+        <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+          <button
+            onClick={() => setView("grid")}
+            className={`rounded-sm px-3 py-1 ${view === "grid" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+            title="Grid view"
+          >
+            Grid
+          </button>
+          <button
+            onClick={() => setView("list")}
+            className={`rounded-sm px-3 py-1 ${view === "list" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+            title="List view"
+          >
+            List
+          </button>
         </div>
       </div>
 
