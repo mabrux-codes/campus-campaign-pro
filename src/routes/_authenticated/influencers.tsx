@@ -262,33 +262,31 @@ function InfluencersPage() {
             const plats = normalizePlatforms(p);
             return (
               <Card key={p.id} className="group transition hover:shadow-sm">
-                <CardContent className="space-y-3 p-4">
-                  <div className="flex items-start gap-3">
+                <CardContent className={view === "list" ? "flex flex-wrap items-center gap-4 p-3" : "space-y-3 p-4"}>
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent text-base font-semibold uppercase">
                       {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="h-full w-full rounded-full object-cover" /> : p.name.slice(0, 2)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{p.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {plats[0]?.handle || "—"}
-                      </p>
-                    </div>
-                    <div className="flex gap-1 opacity-0 transition group-hover:opacity-100">
-                      <EditInfluencerDialog
-                        profile={p}
-                        onSaved={() => qc.invalidateQueries({ queryKey: ["influencer-profiles", current?.id] })}
-                      />
-                      <Button size="icon" variant="ghost" onClick={() => remove(p.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <p className="truncate text-xs text-muted-foreground">{plats[0]?.handle || "—"}</p>
+                      {view === "list" && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {plats.map((e, idx) => (
+                            <Badge key={idx} variant="outline" className="text-[10px]">{e.platform}</Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {plats.map((e, idx) => (
-                      <Badge key={idx} variant="outline" className="text-[10px]">{e.platform}</Badge>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
+                  {view === "grid" && (
+                    <div className="flex flex-wrap gap-1">
+                      {plats.map((e, idx) => (
+                        <Badge key={idx} variant="outline" className="text-[10px]">{e.platform}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  <div className={view === "list" ? "flex items-center gap-6 text-center" : "grid grid-cols-3 gap-2 border-t border-border pt-3 text-center"}>
                     <Mini label="Followers" value={totalFollowers(p).toLocaleString()} />
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
@@ -305,7 +303,18 @@ function InfluencersPage() {
                     </TooltipProvider>
                     <Mini label="Campaigns" value={(agg?.campaigns.size ?? 0).toString()} />
                   </div>
-                  <ActivityDialog profile={p} />
+                  <div className={view === "list" ? "flex items-center gap-2" : "flex items-center justify-between"}>
+                    <ActivityDialog profile={p} />
+                    <div className="flex gap-1">
+                      <EditInfluencerDialog
+                        profile={p}
+                        onSaved={() => qc.invalidateQueries({ queryKey: ["influencer-profiles", current?.id] })}
+                      />
+                      <Button size="icon" variant="ghost" onClick={() => remove(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             );
