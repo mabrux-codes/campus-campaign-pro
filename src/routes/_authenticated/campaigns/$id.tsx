@@ -225,7 +225,7 @@ function CampaignDetail() {
             <Row k="Phone" v={campaign.contact_phone} />
             {campaign.type === "paid" && (
               <>
-                <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} currency={currency} /> : "—"} />
+                <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} storedCurrency={(campaign.budget_currency as Currency) || "USD"} displayCurrency={currency} /> : "—"} />
                 <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               </>
             )}
