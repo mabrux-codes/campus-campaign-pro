@@ -4,7 +4,7 @@ export default defineConfig({
   tanstackStart: {
     server: {
       entry: "server",
-      preset: "vercel", // 👈 THIS is the important fix
+      preset: "vercel-edge", // ✅ THIS is key for Vercel
     },
   },
 });
