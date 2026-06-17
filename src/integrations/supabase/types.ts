@@ -62,6 +62,7 @@ export type Database = {
       }
       campaigns: {
         Row: {
+          budget_currency: string | null
           client_country: string | null
           contact_email: string | null
           contact_person: string | null
@@ -85,6 +86,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          budget_currency?: string | null
           client_country?: string | null
           contact_email?: string | null
           contact_person?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          budget_currency?: string | null
           client_country?: string | null
           contact_email?: string | null
           contact_person?: string | null
