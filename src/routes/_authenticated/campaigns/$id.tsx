@@ -449,7 +449,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => v
           <Row k="Window" v={campaign.start_date && campaign.end_date ? `${campaign.start_date} → ${campaign.end_date}` : "—"} />
           {campaign.type === "paid" && (
             <>
-              <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} currency={currency} /> : "—"} />
+              <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} storedCurrency={(campaign.budget_currency as Currency) || "USD"} displayCurrency={currency} /> : "—"} />
               <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               <Row k="Uses influencers" v={campaign.uses_influencers ? "Yes" : "No"} />
             </>
