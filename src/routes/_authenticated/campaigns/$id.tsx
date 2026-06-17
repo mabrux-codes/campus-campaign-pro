@@ -19,21 +19,21 @@ import { getRates, convert } from "@/lib/fx";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-function BudgetDisplay({ amount, currency }: { amount: number; currency: Currency }) {
-  const [kes, setKes] = useState<number | null>(null);
+function BudgetDisplay({ amount, storedCurrency, displayCurrency }: { amount: number; storedCurrency: Currency; displayCurrency: Currency }) {
+  const [converted, setConverted] = useState<number | null>(null);
   useEffect(() => {
-    if (currency === "KES") return;
+    if (storedCurrency === displayCurrency) return;
     getRates().then((r) => {
       if (!r) return;
-      const v = convert(amount, currency, "KES", r.rates);
-      if (v != null) setKes(v);
+      const v = convert(amount, storedCurrency, displayCurrency, r.rates);
+      if (v != null) setConverted(v);
     });
-  }, [amount, currency]);
-  if (currency === "KES") return <>{formatMoney(amount, "KES")}</>;
+  }, [amount, storedCurrency, displayCurrency]);
+  if (storedCurrency === displayCurrency) return <>{formatMoney(amount, displayCurrency)}</>;
   return (
     <span>
-      {formatMoney(amount, currency)}
-      {kes != null && <span className="ml-2 text-xs text-muted-foreground">≈ {formatMoney(kes, "KES")}</span>}
+      {converted != null ? formatMoney(converted, displayCurrency) : "…"}
+      <span className="ml-2 text-xs text-muted-foreground">({formatMoney(amount, storedCurrency)})</span>
     </span>
   );
 }
@@ -225,7 +225,7 @@ function CampaignDetail() {
             <Row k="Phone" v={campaign.contact_phone} />
             {campaign.type === "paid" && (
               <>
-                <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} currency={currency} /> : "—"} />
+                <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} storedCurrency={(campaign.budget_currency as Currency) || "USD"} displayCurrency={currency} /> : "—"} />
                 <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               </>
             )}
@@ -449,7 +449,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign: any; onSaved: () => v
           <Row k="Window" v={campaign.start_date && campaign.end_date ? `${campaign.start_date} → ${campaign.end_date}` : "—"} />
           {campaign.type === "paid" && (
             <>
-              <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} currency={currency} /> : "—"} />
+              <Row k="Budget" v={campaign.paid_budget ? <BudgetDisplay amount={Number(campaign.paid_budget)} storedCurrency={(campaign.budget_currency as Currency) || "USD"} displayCurrency={currency} /> : "—"} />
               <Row k="Platforms" v={campaign.platforms?.join(", ") || "—"} />
               <Row k="Uses influencers" v={campaign.uses_influencers ? "Yes" : "No"} />
             </>

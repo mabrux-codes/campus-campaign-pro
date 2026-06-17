@@ -18,7 +18,7 @@ const C = createContext<Ctx | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [currency, setCurrencyState] = useState<Currency>("USD");
+  const [currency, setCurrencyState] = useState<Currency>("KES");
 
   useEffect(() => {
     if (!user) return;
@@ -28,7 +28,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
-        const c = (data?.currency as Currency) ?? "USD";
+        const c = (data?.currency as Currency) ?? "KES";
         if (CURRENCIES.includes(c)) setCurrencyState(c);
       });
   }, [user?.id]);
@@ -47,11 +47,13 @@ export function useCurrency() {
   return c;
 }
 
-export function formatMoney(amount: number | null | undefined, currency: Currency = "USD") {
+export function formatMoney(amount: number | null | undefined, currency: Currency = "KES") {
   if (amount === null || amount === undefined) return "—";
+  const rounded = Math.round(Number(amount)).toLocaleString();
+  if (currency === "KES") return `KSh ${rounded}`;
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
   } catch {
-    return `${SYMBOLS[currency]}${Number(amount).toLocaleString()}`;
+    return `${SYMBOLS[currency]}${rounded}`;
   }
 }

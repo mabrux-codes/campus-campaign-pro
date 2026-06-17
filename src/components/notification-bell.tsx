@@ -74,14 +74,10 @@ export function NotificationBell() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/notifications" className="text-xs text-muted-foreground">View all notifications →</Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         {items.length === 0 ? (
           <p className="px-3 py-6 text-center text-xs text-muted-foreground">You're all caught up.</p>
         ) : (
-          items.map((n) => (
+          items.slice(0, 5).map((n) => (
             <DropdownMenuItem key={n.id} asChild>
               <Link to={n.link ?? "/dashboard"} className={`flex flex-col items-start gap-0.5 ${!n.read_at ? "bg-accent/30" : ""}`}>
                 <span className="text-sm font-medium">{n.title}</span>
@@ -91,6 +87,10 @@ export function NotificationBell() {
             </DropdownMenuItem>
           ))
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/notifications" className="justify-center text-xs font-medium text-primary">View all notifications →</Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

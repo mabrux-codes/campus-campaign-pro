@@ -134,9 +134,10 @@ function CampaignList() {
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     draft: "bg-muted text-muted-foreground",
-    active: "bg-primary/15 text-primary border-primary/30",
+    active: "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400",
     paused: "bg-warning/20 text-warning-foreground",
     completed: "bg-success/15 text-success border-success/30",
+    cancelled: "bg-destructive/15 text-destructive border-destructive/30",
   };
   return (
     <span className={`inline-flex rounded-md border border-transparent px-2 py-0.5 text-xs font-medium capitalize ${map[status] ?? ""}`}>
