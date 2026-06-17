@@ -90,7 +90,8 @@ function NewCampaign() {
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         type: form.type,
-        paid_budget: form.type === "paid" && form.paid_budget ? Number(form.paid_budget) : null,
+        paid_budget: form.paid_budget ? Number(form.paid_budget) : null,
+        budget_currency: form.paid_budget ? currency : null,
         platforms: form.type === "paid" ? form.platforms : [],
         uses_influencers: form.type === "paid" && form.uses_influencers,
       })
