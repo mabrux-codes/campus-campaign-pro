@@ -19,21 +19,21 @@ import { getRates, convert } from "@/lib/fx";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-function BudgetDisplay({ amount, currency }: { amount: number; currency: Currency }) {
-  const [kes, setKes] = useState<number | null>(null);
+function BudgetDisplay({ amount, storedCurrency, displayCurrency }: { amount: number; storedCurrency: Currency; displayCurrency: Currency }) {
+  const [converted, setConverted] = useState<number | null>(null);
   useEffect(() => {
-    if (currency === "KES") return;
+    if (storedCurrency === displayCurrency) return;
     getRates().then((r) => {
       if (!r) return;
-      const v = convert(amount, currency, "KES", r.rates);
-      if (v != null) setKes(v);
+      const v = convert(amount, storedCurrency, displayCurrency, r.rates);
+      if (v != null) setConverted(v);
     });
-  }, [amount, currency]);
-  if (currency === "KES") return <>{formatMoney(amount, "KES")}</>;
+  }, [amount, storedCurrency, displayCurrency]);
+  if (storedCurrency === displayCurrency) return <>{formatMoney(amount, displayCurrency)}</>;
   return (
     <span>
-      {formatMoney(amount, currency)}
-      {kes != null && <span className="ml-2 text-xs text-muted-foreground">≈ {formatMoney(kes, "KES")}</span>}
+      {converted != null ? formatMoney(converted, displayCurrency) : "…"}
+      <span className="ml-2 text-xs text-muted-foreground">({formatMoney(amount, storedCurrency)})</span>
     </span>
   );
 }
