@@ -18,7 +18,7 @@ const C = createContext<Ctx | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [currency, setCurrencyState] = useState<Currency>("USD");
+  const [currency, setCurrencyState] = useState<Currency>("KES");
 
   useEffect(() => {
     if (!user) return;
@@ -28,7 +28,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
-        const c = (data?.currency as Currency) ?? "USD";
+        const c = (data?.currency as Currency) ?? "KES";
         if (CURRENCIES.includes(c)) setCurrencyState(c);
       });
   }, [user?.id]);
