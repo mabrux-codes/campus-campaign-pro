@@ -83,7 +83,7 @@ export type Database = {
           university_name: string
           updated_at: string
           uses_influencers: boolean
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           budget_currency?: string | null
@@ -107,7 +107,7 @@ export type Database = {
           university_name: string
           updated_at?: string
           uses_influencers?: boolean
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           budget_currency?: string | null
@@ -131,7 +131,7 @@ export type Database = {
           university_name?: string
           updated_at?: string
           uses_influencers?: boolean
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: []
       }
