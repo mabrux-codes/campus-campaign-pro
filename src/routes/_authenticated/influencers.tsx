@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SOCIAL_PLATFORMS, handlePlaceholder } from "@/lib/social-platforms";
 import { toast } from "sonner";
+import { useUiPref } from "@/lib/ui-prefs";
 
 export const Route = createFileRoute("/_authenticated/influencers")({
   component: InfluencersPage,
