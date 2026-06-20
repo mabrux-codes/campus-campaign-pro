@@ -315,6 +315,7 @@ export type Database = {
           phone: string | null
           social_links: Json
           title: string
+          ui_prefs: Json
           updated_at: string
         }
         Insert: {
@@ -331,6 +332,7 @@ export type Database = {
           phone?: string | null
           social_links?: Json
           title?: string
+          ui_prefs?: Json
           updated_at?: string
         }
         Update: {
@@ -347,6 +349,7 @@ export type Database = {
           phone?: string | null
           social_links?: Json
           title?: string
+          ui_prefs?: Json
           updated_at?: string
         }
         Relationships: []
@@ -494,6 +497,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workspace_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_activity_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_invitations: {
         Row: {
