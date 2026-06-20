@@ -53,8 +53,8 @@ export function useUiPref<T>(key: string, defaultValue: T): [T, (next: T) => voi
         .eq("id", user.id)
         .maybeSingle()
         .then(({ data }) => {
-          const prefs = { ...((data?.ui_prefs ?? {}) as Record<string, unknown>), [key]: next };
-          supabase.from("profiles").update({ ui_prefs: prefs }).eq("id", user.id);
+          const prefs = { ...((data?.ui_prefs ?? {}) as Record<string, unknown>), [key]: next as unknown };
+          supabase.from("profiles").update({ ui_prefs: prefs as never }).eq("id", user.id);
         });
     },
     [user?.id, key, storageKey],
