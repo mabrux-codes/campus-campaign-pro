@@ -110,18 +110,16 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
   const moveData = async () => {
     if (!current?.id || !target || !counts || !user) return;
     setMoving(true);
-    const moved = {} as Counts;
+    const moved = { ...counts } as Counts;
     for (const t of MOVE_TABLES) {
-      const { error, count } = await supabase
+      const { error } = await supabase
         .from(t)
-        .update({ workspace_id: target }, { count: "exact" })
-        .eq("workspace_id", current.id)
-        .select("id", { count: "exact", head: true });
+        .update({ workspace_id: target })
+        .eq("workspace_id", current.id);
       if (error) {
         setMoving(false);
         return toast.error(`${t}: ${error.message}`);
       }
-      moved[t] = count ?? 0;
     }
     const targetName = workspaces.find((w) => w.id === target)?.name ?? target;
     const sourceName = current.name;
