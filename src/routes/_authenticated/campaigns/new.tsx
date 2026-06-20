@@ -72,12 +72,16 @@ function NewCampaign() {
       setStep(1);
       return;
     }
+    if (!current?.id) {
+      toast.error("Select a workspace before creating a campaign.");
+      return;
+    }
     setBusy(true);
     const { data: campaign, error } = await supabase
       .from("campaigns")
       .insert({
         owner_id: user.id,
-        workspace_id: current?.id ?? null,
+        workspace_id: current.id,
         university_name: form.university_name,
         client_country: form.client_country || null,
         contact_person: form.contact_person || null,
