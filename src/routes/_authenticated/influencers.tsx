@@ -116,7 +116,7 @@ function InfluencersPage() {
   }, [campaignRows]);
 
   const [tab, setTab] = useState<"available" | "active">("available");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useUiPref<"grid" | "list">("influencers.view", "grid");
 
   const visibleProfiles = useMemo(
     () => profiles.filter((p) => tab === "active" ? activeProfileIds.has(p.id) : !activeProfileIds.has(p.id)),
