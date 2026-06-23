@@ -1,19 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useTheme } from "@/lib/theme";
 import { CURRENCIES, useCurrency, formatMoney } from "@/lib/currency";
 import { useWorkspace } from "@/lib/workspace";
 import { useAuth } from "@/lib/auth";
 import { useSecurityAlerts } from "@/lib/security-alerts";
+import { useUiPref } from "@/lib/ui-prefs";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteMyAccount } from "@/lib/account.functions";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { Moon, Sun, Building2, User, CreditCard, ShieldCheck, LogOut, ShieldAlert, Check, Link2 } from "lucide-react";
+import { Moon, Sun, Building2, User, CreditCard, ShieldCheck, LogOut, ShieldAlert, Check, Link2, LayoutGrid, AlertTriangle, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
