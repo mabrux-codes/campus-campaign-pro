@@ -67,6 +67,28 @@ function SettingsPage() {
     if (result.error) toast.error((result.error as any).message ?? `Could not start ${provider} sign-in`);
   };
 
+  const resetInfluencerView = () => {
+    setInfluencerView("grid");
+    toast.success("Influencer view reset to Grid and synced across devices");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmText.trim().toLowerCase() !== DELETE_PHRASE) {
+      toast.error("Please type the confirmation phrase exactly");
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteAccountFn();
+      await signOut();
+      toast.success("Account deleted");
+      navigate({ to: "/login" });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Couldn't delete account");
+      setDeleting(false);
+    }
+  };
+
   const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "medium" | "high" | "critical">("all");
   const openFindings = findings.filter((f) => f.status === "open");
   const visibleFindings = severityFilter === "all" ? findings : findings.filter((f) => f.severity === severityFilter);
