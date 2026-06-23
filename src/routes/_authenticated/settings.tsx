@@ -250,6 +250,65 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-medium"><LayoutGrid className="h-4 w-4" /> Interface preferences</CardTitle>
+          <CardDescription>Layout choices that follow you across devices.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div>
+            <p className="font-medium">Influencer list view</p>
+            <p className="text-xs text-muted-foreground">Currently: <span className="capitalize">{influencerView}</span>. Default is Grid.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={resetInfluencerView} disabled={influencerView === "grid"}>
+            Reset to default
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-medium text-destructive"><AlertTriangle className="h-4 w-4" /> Danger zone</CardTitle>
+          <CardDescription>Permanently delete your account and all data you own.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setConfirmText(""); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="destructive"><AlertTriangle className="mr-2 h-3.5 w-3.5" /> Delete my account</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="h-5 w-5" /> Delete account permanently</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete your account, owned workspaces, campaigns, influencers, reports, and all related data.
+                  <strong className="mt-2 block text-destructive">This action cannot be undone.</strong>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2 py-2">
+                <Label htmlFor="confirm-delete" className="text-xs">To proceed, type: <code className="rounded bg-muted px-1 py-0.5">{DELETE_PHRASE}</code></Label>
+                <Input
+                  id="confirm-delete"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder={DELETE_PHRASE}
+                  autoComplete="off"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting || confirmText.trim().toLowerCase() !== DELETE_PHRASE}
+                >
+                  {deleting ? (<><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Deleting…</>) : "Delete account forever"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }
