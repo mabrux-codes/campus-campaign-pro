@@ -27,12 +27,19 @@ export const Route = createFileRoute("/_authenticated/settings")({
 type IdentityProvider = "google" | "apple";
 
 function SettingsPage() {
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
   const { current, workspaces } = useWorkspace();
   const { user, signOut } = useAuth();
   const { findings, isAdmin, acknowledge, resolve } = useSecurityAlerts();
   const [identities, setIdentities] = useState<string[]>([]);
+  const [influencerView, setInfluencerView] = useUiPref<"grid" | "list">("influencers.view", "grid");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const deleteAccountFn = useServerFn(deleteMyAccount);
+  const DELETE_PHRASE = "i want to proceed deleting my account";
 
   useEffect(() => {
     let active = true;
