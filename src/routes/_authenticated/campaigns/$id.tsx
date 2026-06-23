@@ -21,19 +21,25 @@ import remarkGfm from "remark-gfm";
 
 function BudgetDisplay({ amount, storedCurrency, displayCurrency }: { amount: number; storedCurrency: Currency; displayCurrency: Currency }) {
   const [converted, setConverted] = useState<number | null>(null);
+  const [meta, setMeta] = useState<{ updated: number; stale: boolean } | null>(null);
   useEffect(() => {
     if (storedCurrency === displayCurrency) return;
     getRates().then((r) => {
       if (!r) return;
       const v = convert(amount, storedCurrency, displayCurrency, r.rates);
       if (v != null) setConverted(v);
+      setMeta({ updated: r.updated, stale: r.stale });
     });
   }, [amount, storedCurrency, displayCurrency]);
   if (storedCurrency === displayCurrency) return <>{formatMoney(amount, displayCurrency)}</>;
+  const ts = meta ? new Date(meta.updated).toLocaleString() : null;
   return (
-    <span>
+    <span title={ts ? `FX rate ${meta?.stale ? "(stale) " : ""}updated ${ts}` : undefined}>
       {converted != null ? formatMoney(converted, displayCurrency) : "…"}
       <span className="ml-2 text-xs text-muted-foreground">({formatMoney(amount, storedCurrency)})</span>
+      {meta?.stale && ts && (
+        <span className="ml-2 text-[10px] uppercase text-warning">stale · {ts}</span>
+      )}
     </span>
   );
 }

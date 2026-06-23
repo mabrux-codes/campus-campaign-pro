@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -22,28 +22,40 @@ export function NotificationBell() {
   const { user } = useAuth();
   const [items, setItems] = useState<Notif[]>([]);
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const [loadingFirst, setLoadingFirst] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const loadFirst = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("notifications")
-      .select("id,title,body,link,read_at,created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(PAGE_SIZE + 1);
-    const rows = data ?? [];
-    setHasMore(rows.length > PAGE_SIZE);
-    setItems(rows.slice(0, PAGE_SIZE));
-    setVisible(PAGE_SIZE);
-    const { count } = await supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .is("read_at", null);
-    setUnreadCount(count ?? 0);
+    setLoadingFirst(true);
+    setError(null);
+    try {
+      const { data, error: e1 } = await supabase
+        .from("notifications")
+        .select("id,title,body,link,read_at,created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE + 1);
+      if (e1) throw e1;
+      const rows = data ?? [];
+      setHasMore(rows.length > PAGE_SIZE);
+      setItems(rows.slice(0, PAGE_SIZE));
+      setVisible(PAGE_SIZE);
+      const { count, error: e2 } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null);
+      if (e2) throw e2;
+      setUnreadCount(count ?? 0);
+    } catch (err: any) {
+      setError(err?.message ?? "Couldn't load notifications");
+    } finally {
+      setLoadingFirst(false);
+    }
   }, [user?.id]);
 
   useEffect(() => {
@@ -65,19 +77,26 @@ export function NotificationBell() {
   const loadMore = async () => {
     if (!user || loadingMore || items.length === 0) return;
     setLoadingMore(true);
-    const last = items[items.length - 1];
-    const { data } = await supabase
-      .from("notifications")
-      .select("id,title,body,link,read_at,created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .lt("created_at", last.created_at)
-      .limit(PAGE_SIZE + 1);
-    const rows = data ?? [];
-    setHasMore(rows.length > PAGE_SIZE);
-    setItems((prev) => [...prev, ...rows.slice(0, PAGE_SIZE)]);
-    setVisible((v) => v + PAGE_SIZE);
-    setLoadingMore(false);
+    setError(null);
+    try {
+      const last = items[items.length - 1];
+      const { data, error: e } = await supabase
+        .from("notifications")
+        .select("id,title,body,link,read_at,created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .lt("created_at", last.created_at)
+        .limit(PAGE_SIZE + 1);
+      if (e) throw e;
+      const rows = data ?? [];
+      setHasMore(rows.length > PAGE_SIZE);
+      setItems((prev) => [...prev, ...rows.slice(0, PAGE_SIZE)]);
+      setVisible((v) => v + PAGE_SIZE);
+    } catch (err: any) {
+      setError(err?.message ?? "Couldn't load older notifications");
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const markAll = async () => {
@@ -109,7 +128,18 @@ export function NotificationBell() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div className="max-h-96 overflow-y-auto">
-          {items.length === 0 ? (
+          {loadingFirst && items.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 px-3 py-6 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+            </div>
+          ) : error && items.length === 0 ? (
+            <div className="space-y-2 px-3 py-4 text-center">
+              <p className="flex items-center justify-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" /> {error}
+              </p>
+              <button onClick={loadFirst} className="text-xs font-medium text-primary hover:underline">Retry</button>
+            </div>
+          ) : items.length === 0 ? (
             <p className="px-3 py-6 text-center text-xs text-muted-foreground">You're all caught up.</p>
           ) : (
             items.map((n) => (
@@ -122,14 +152,23 @@ export function NotificationBell() {
               </DropdownMenuItem>
             ))
           )}
-          {hasMore && items.length > 0 && (
+          {error && items.length > 0 && (
+            <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 text-[11px] text-destructive">
+              <span className="flex items-center gap-1"><AlertCircle className="h-3 w-3" /> {error}</span>
+              <button onClick={loadMore} className="font-medium underline">Retry</button>
+            </div>
+          )}
+          {hasMore && items.length > 0 && !error && (
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="w-full px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
-              {loadingMore ? "Loading…" : `Load older (${visible} shown)`}
+              {loadingMore ? (<><Loader2 className="h-3 w-3 animate-spin" /> Loading older…</>) : `Load older (${visible} shown)`}
             </button>
+          )}
+          {!hasMore && items.length > PAGE_SIZE && (
+            <p className="px-3 py-2 text-center text-[10px] text-muted-foreground">No more notifications</p>
           )}
         </div>
         <DropdownMenuSeparator />

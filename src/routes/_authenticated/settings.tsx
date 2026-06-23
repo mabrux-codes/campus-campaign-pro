@@ -1,19 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useTheme } from "@/lib/theme";
 import { CURRENCIES, useCurrency, formatMoney } from "@/lib/currency";
 import { useWorkspace } from "@/lib/workspace";
 import { useAuth } from "@/lib/auth";
 import { useSecurityAlerts } from "@/lib/security-alerts";
+import { useUiPref } from "@/lib/ui-prefs";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteMyAccount } from "@/lib/account.functions";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { Moon, Sun, Building2, User, CreditCard, ShieldCheck, LogOut, ShieldAlert, Check, Link2 } from "lucide-react";
+import { Moon, Sun, Building2, User, CreditCard, ShieldCheck, LogOut, ShieldAlert, Check, Link2, LayoutGrid, AlertTriangle, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -22,12 +27,19 @@ export const Route = createFileRoute("/_authenticated/settings")({
 type IdentityProvider = "google" | "apple";
 
 function SettingsPage() {
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
   const { current, workspaces } = useWorkspace();
   const { user, signOut } = useAuth();
   const { findings, isAdmin, acknowledge, resolve } = useSecurityAlerts();
   const [identities, setIdentities] = useState<string[]>([]);
+  const [influencerView, setInfluencerView] = useUiPref<"grid" | "list">("influencers.view", "grid");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const deleteAccountFn = useServerFn(deleteMyAccount);
+  const DELETE_PHRASE = "i want to proceed deleting my account";
 
   useEffect(() => {
     let active = true;
@@ -53,6 +65,28 @@ function SettingsPage() {
       redirect_uri: window.location.origin + "/settings",
     });
     if (result.error) toast.error((result.error as any).message ?? `Could not start ${provider} sign-in`);
+  };
+
+  const resetInfluencerView = () => {
+    setInfluencerView("grid");
+    toast.success("Influencer view reset to Grid and synced across devices");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmText.trim().toLowerCase() !== DELETE_PHRASE) {
+      toast.error("Please type the confirmation phrase exactly");
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteAccountFn();
+      await signOut();
+      toast.success("Account deleted");
+      navigate({ to: "/login" });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Couldn't delete account");
+      setDeleting(false);
+    }
   };
 
   const [severityFilter, setSeverityFilter] = useState<"all" | "low" | "medium" | "high" | "critical">("all");
@@ -214,6 +248,65 @@ function SettingsPage() {
             <Button size="sm" variant="outline" onClick={sendReset}><ShieldCheck className="mr-2 h-3.5 w-3.5" /> Send password reset</Button>
             <Button size="sm" variant="outline" onClick={() => signOut()}><LogOut className="mr-2 h-3.5 w-3.5" /> Sign out</Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-medium"><LayoutGrid className="h-4 w-4" /> Interface preferences</CardTitle>
+          <CardDescription>Layout choices that follow you across devices.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div>
+            <p className="font-medium">Influencer list view</p>
+            <p className="text-xs text-muted-foreground">Currently: <span className="capitalize">{influencerView}</span>. Default is Grid.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={resetInfluencerView} disabled={influencerView === "grid"}>
+            Reset to default
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-medium text-destructive"><AlertTriangle className="h-4 w-4" /> Danger zone</CardTitle>
+          <CardDescription>Permanently delete your account and all data you own.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setConfirmText(""); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="destructive"><AlertTriangle className="mr-2 h-3.5 w-3.5" /> Delete my account</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="h-5 w-5" /> Delete account permanently</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete your account, owned workspaces, campaigns, influencers, reports, and all related data.
+                  <strong className="mt-2 block text-destructive">This action cannot be undone.</strong>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2 py-2">
+                <Label htmlFor="confirm-delete" className="text-xs">To proceed, type: <code className="rounded bg-muted px-1 py-0.5">{DELETE_PHRASE}</code></Label>
+                <Input
+                  id="confirm-delete"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder={DELETE_PHRASE}
+                  autoComplete="off"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting || confirmText.trim().toLowerCase() !== DELETE_PHRASE}
+                >
+                  {deleting ? (<><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Deleting…</>) : "Delete account forever"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
