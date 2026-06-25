@@ -38,6 +38,7 @@ function SettingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const deleteAccountFn = useServerFn(deleteMyAccount);
   const DELETE_PHRASE = "i want to proceed deleting my account";
 
@@ -78,13 +79,16 @@ function SettingsPage() {
       return;
     }
     setDeleting(true);
+    setDeleteError(null);
     try {
       await deleteAccountFn();
       await signOut();
       toast.success("Account deleted");
       navigate({ to: "/login" });
     } catch (err: any) {
-      toast.error(err?.message ?? "Couldn't delete account");
+      const msg = err?.message ?? "Couldn't delete account. Please try again.";
+      setDeleteError(msg);
+      toast.error(msg);
       setDeleting(false);
     }
   };
@@ -273,9 +277,16 @@ function SettingsPage() {
           <CardDescription>Permanently delete your account and all data you own.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setConfirmText(""); }}>
+          <Dialog
+            open={deleteOpen}
+            onOpenChange={(o) => {
+              if (deleting) return; // prevent closing mid-delete
+              setDeleteOpen(o);
+              if (!o) { setConfirmText(""); setDeleteError(null); }
+            }}
+          >
             <DialogTrigger asChild>
-              <Button size="sm" variant="destructive"><AlertTriangle className="mr-2 h-3.5 w-3.5" /> Delete my account</Button>
+              <Button size="sm" variant="destructive" disabled={deleting}><AlertTriangle className="mr-2 h-3.5 w-3.5" /> Delete my account</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -293,7 +304,20 @@ function SettingsPage() {
                   onChange={(e) => setConfirmText(e.target.value)}
                   placeholder={DELETE_PHRASE}
                   autoComplete="off"
+                  disabled={deleting}
                 />
+                {deleting && (
+                  <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Deleting your account and all related data. Please don't close this window…
+                  </div>
+                )}
+                {deleteError && !deleting && (
+                  <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><strong>Deletion failed.</strong> {deleteError}</span>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>

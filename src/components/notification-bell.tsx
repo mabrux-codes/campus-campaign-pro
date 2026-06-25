@@ -74,30 +74,46 @@ export function NotificationBell() {
     };
   }, [user?.id, loadFirst]);
 
-  const loadMore = async () => {
+  const [retryAttempt, setRetryAttempt] = useState(0);
+
+  const loadMore = useCallback(async () => {
     if (!user || loadingMore || items.length === 0) return;
     setLoadingMore(true);
     setError(null);
-    try {
-      const last = items[items.length - 1];
-      const { data, error: e } = await supabase
-        .from("notifications")
-        .select("id,title,body,link,read_at,created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .lt("created_at", last.created_at)
-        .limit(PAGE_SIZE + 1);
-      if (e) throw e;
-      const rows = data ?? [];
-      setHasMore(rows.length > PAGE_SIZE);
-      setItems((prev) => [...prev, ...rows.slice(0, PAGE_SIZE)]);
-      setVisible((v) => v + PAGE_SIZE);
-    } catch (err: any) {
-      setError(err?.message ?? "Couldn't load older notifications");
-    } finally {
-      setLoadingMore(false);
+    const last = items[items.length - 1];
+    const MAX_ATTEMPTS = 4;
+    let lastErr: any = null;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      setRetryAttempt(attempt > 1 ? attempt : 0);
+      try {
+        const { data, error: e } = await supabase
+          .from("notifications")
+          .select("id,title,body,link,read_at,created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .lt("created_at", last.created_at)
+          .limit(PAGE_SIZE + 1);
+        if (e) throw e;
+        const rows = data ?? [];
+        setHasMore(rows.length > PAGE_SIZE);
+        setItems((prev) => [...prev, ...rows.slice(0, PAGE_SIZE)]);
+        setVisible((v) => v + PAGE_SIZE);
+        setRetryAttempt(0);
+        setLoadingMore(false);
+        return;
+      } catch (err: any) {
+        lastErr = err;
+        if (attempt < MAX_ATTEMPTS) {
+          // Exponential backoff with jitter: 400ms, 800ms, 1600ms
+          const delay = 400 * Math.pow(2, attempt - 1) + Math.random() * 150;
+          await new Promise((r) => setTimeout(r, delay));
+        }
+      }
     }
-  };
+    setError(lastErr?.message ?? "Couldn't load older notifications");
+    setRetryAttempt(0);
+    setLoadingMore(false);
+  }, [user?.id, loadingMore, items]);
 
   const markAll = async () => {
     if (!user) return;
@@ -164,7 +180,14 @@ export function NotificationBell() {
               disabled={loadingMore}
               className="flex w-full items-center justify-center gap-2 px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
-              {loadingMore ? (<><Loader2 className="h-3 w-3 animate-spin" /> Loading older…</>) : `Load older (${visible} shown)`}
+              {loadingMore ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {retryAttempt > 1 ? `Retrying… (attempt ${retryAttempt}/4)` : "Loading older…"}
+                </>
+              ) : (
+                `Load older (${visible} shown)`
+              )}
             </button>
           )}
           {!hasMore && items.length > PAGE_SIZE && (
